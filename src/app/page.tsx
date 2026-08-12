@@ -16,6 +16,37 @@ const gold = "#e3b341";
 // Set to your Calendly (or other booking) URL to enable direct booking in the modal.
 const CALENDLY_URL = "";
 
+const card = "rounded-2xl border border-white/[0.08] bg-white/[0.02]";
+const eyebrow = "font-mono text-[11px] uppercase tracking-[0.2em]";
+
+const BENTO = [
+  { n: "01", k: "Probe", h: "We find the gaps first", p: "Headless Chrome opens your site cold — no cookies, no history — and records every request that fires before anyone touches your consent banner." },
+  { n: "02", k: "Prove", h: "Evidence, not opinions", p: "You get the exact request URLs and their timestamps, so you can reproduce every finding yourself in DevTools in about thirty seconds." },
+  { n: "03", k: "Reinforce", h: "Close each gap, vendor by vendor", p: "Which tags to gate behind consent, which need consent-mode wired up, and what to change in your tag manager to do it." },
+  { n: "04", k: "Stand watch", h: "It stays sealed", p: "We re-scan on a schedule and email you the moment a new tag slips back in — which is usually how sites regress after a marketing hire." },
+];
+
+const CHECKS = [
+  ["Ad pixels firing before consent", "Meta, Google, LinkedIn & TikTok tags that share visitor IDs on page load — a CCPA/CPRA “sale/share.”"],
+  ["Ignored “Do Not Track” (GPC) signals", "State laws require honoring the browser opt-out signal automatically. Most sites don’t."],
+  ["Session recording (CIPA)", "Hotjar/FullStory/Clarity capturing what visitors type — the #1 “wiretapping” lawsuit issue of 2025."],
+  ["Video + Meta Pixel (VPPA)", "Tells Facebook which videos a visitor watched — a fast-growing class-action wave."],
+  ["A cookie banner that doesn’t block", "Termly/CookieYes installed but not gating anything — the Tractor Supply $1.35M pattern."],
+  ["Missing “Your Privacy Choices” opt-out", "Required for any business that sells or shares data."],
+];
+
+const TIERS = [
+  { name: "Free scan", price: "$0", per: "", tag: "Find out where you stand", hot: false, feats: ["One-time homepage scan", "Your first finding, in full", "Self-verify instructions"] },
+  { name: "Starter", price: "$99", per: "/mo", tag: "Stay compliant", hot: true, feats: ["1 site, key pages", "Weekly re-scans + alerts", "Step-by-step fix guide", "Email reports"] },
+  { name: "Growth", price: "$299", per: "/mo", tag: "Multi-site & faster", hot: false, feats: ["Up to 5 sites", "Daily scans + GPC checks", "Consent-mode setup guidance", "Priority support"] },
+];
+
+const Check = () => (
+  <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden>
+    <path d="M4 10.5l4 4 8-9" stroke="#e3b341" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,66 +93,81 @@ export default function Home() {
 
   return (
     <main className="flex-1 text-zinc-300">
-      <nav className="border-b border-white/10">
-        <div className="mx-auto max-w-5xl px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[22px] font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
+      {/* ---------- nav ---------- */}
+      <nav className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#0b0a08]/80 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-1.5">
+            <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
+          </a>
+          <div className="hidden sm:flex items-center gap-8 text-[13px] text-zinc-500">
+            <a href="#how" className="hover:text-zinc-200 transition-colors">How it works</a>
+            <a href="#checks" className="hover:text-zinc-200 transition-colors">What we check</a>
+            <a href="#pricing" className="hover:text-zinc-200 transition-colors">Pricing</a>
           </div>
-          <a href="#pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">Pricing</a>
+          <a href="#scan" className="rounded-lg px-3.5 py-1.5 text-[13px] font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
+            Scan my site
+          </a>
         </div>
       </nav>
 
-      <section className="relative overflow-hidden">
+      {/* ---------- hero ---------- */}
+      <section className="relative overflow-hidden border-b border-white/[0.08]">
+        <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.14), transparent)" }} />
         <div aria-hidden className="pointer-events-none select-none absolute inset-0 flex items-center justify-center">
           <span className="font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1, backgroundImage: "linear-gradient(90deg, rgba(242,202,99,0) 0%, rgba(242,202,99,0.05) 28%, rgba(242,202,99,0.24) 50%, rgba(242,202,99,0.05) 72%, rgba(242,202,99,0) 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" }}>AURAMITE</span>
         </div>
-        <div className="relative z-10 mx-auto max-w-3xl px-5 pt-20 pb-12 text-center">
-        <p className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05] mb-2" style={{ fontFamily: "var(--font-display)", color: gold }}>We watch your site like an eagle</p>
-        <h1 className="text-xl sm:text-4xl font-bold tracking-tight leading-[1.15] text-white" style={{ fontFamily: "var(--font-display)" }}>
-          See what your website is leaking.
-        </h1>
-        <p className="mt-5 text-lg text-zinc-400 max-w-2xl mx-auto">
-          We load your site as a real visitor and show exactly which trackers send personal data to
-          advertisers <span className="text-zinc-100 font-medium">before anyone consents</span> — the issue
-          behind 2025&apos;s privacy fines and lawsuits. Free, in ~20 seconds.
-        </p>
 
-        <form onSubmit={runScan} className="mt-9 flex flex-col sm:flex-row gap-2.5 max-w-xl mx-auto">
-          <input
-            value={url} onChange={(e) => setUrl(e.target.value)}
-            placeholder="yourcompany.com" inputMode="url"
-            className="flex-1 rounded-lg bg-white/[0.04] border border-white/15 px-4 py-3 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341] focus:ring-2 focus:ring-[#e3b341]/25 transition"
-          />
-          <button type="submit" disabled={loading}
-            className="rounded-lg px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110 disabled:opacity-60"
-            style={{ background: gold }}>
-            {loading ? (
-              <span className="flex items-center gap-2"><span className="inline-block h-4 w-4 rounded-full border-2 border-[#0b0a08]/40 border-t-[#0b0a08] animate-spin" />Scanning…</span>
-            ) : "Scan my site"}
-          </button>
-        </form>
-        {error && (
-          <div className="mt-5 mx-auto max-w-xl rounded-lg border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-        {loading && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
-            <span className="inline-block h-4 w-4 rounded-full border-2 border-zinc-700 border-t-[#e3b341] animate-spin" />
-            <span>Loading your homepage and watching what fires… ~15&ndash;20s.</span>
-          </div>
-        )}
+        <div className="relative z-10 mx-auto max-w-3xl px-6 pt-20 pb-16 text-center">
+          <p className={`${eyebrow} mb-6`} style={{ color: gold }}>Pre-consent defense &amp; monitoring</p>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05] mb-2" style={{ fontFamily: "var(--font-display)", color: gold }}>Armor your site against consumer data leaks</h1>
+          <p className="text-xl sm:text-4xl font-bold tracking-tight leading-[1.15] text-white" style={{ fontFamily: "var(--font-display)" }}>
+            Enlist Auramite to watch your site like an eagle.
+          </p>
+          <p className="mt-5 text-[17px] leading-relaxed text-zinc-400 max-w-2xl mx-auto">
+            We load your site as a real visitor, catch every tracker that hands personal data to advertisers
+            <span className="text-zinc-100 font-medium"> before anyone consents</span>, and show you how to shut
+            it down — then stand watch so it stays shut.
+          </p>
+
+          <form id="scan" onSubmit={runScan} className="mt-9 flex flex-col sm:flex-row gap-2.5 max-w-xl mx-auto scroll-mt-24">
+            <input
+              value={url} onChange={(e) => setUrl(e.target.value)}
+              placeholder="yourcompany.com" inputMode="url"
+              className="flex-1 rounded-lg bg-white/[0.04] border border-white/15 px-4 py-3 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341] focus:ring-2 focus:ring-[#e3b341]/25 transition"
+            />
+            <button type="submit" disabled={loading}
+              className="rounded-lg px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110 disabled:opacity-60"
+              style={{ background: gold }}>
+              {loading ? (
+                <span className="flex items-center gap-2"><span className="inline-block h-4 w-4 rounded-full border-2 border-[#0b0a08]/40 border-t-[#0b0a08] animate-spin" />Scanning…</span>
+              ) : "Scan my site"}
+            </button>
+          </form>
+          <p className="mt-3 text-xs text-zinc-600">No signup · results in ~20 seconds · plain-English findings, not legal advice</p>
+
+          {error && (
+            <div className="mt-5 mx-auto max-w-xl rounded-lg border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+          {loading && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
+              <span className="inline-block h-4 w-4 rounded-full border-2 border-zinc-700 border-t-[#e3b341] animate-spin" />
+              <span>Loading your homepage and watching what fires… ~15&ndash;20s.</span>
+            </div>
+          )}
         </div>
       </section>
 
+      {/* ---------- results ---------- */}
       {result && (
-        <section className="mx-auto max-w-6xl px-5 pt-12 pb-16">
+        <section className="mx-auto max-w-6xl px-6 pt-12 pb-16">
           <div className="grid gap-4 items-start md:grid-cols-2 lg:grid-cols-3">
 
             {/* col 1: summary + timeline + verify */}
             <div className="space-y-4">
-              <div className={`rounded-xl border p-5 ${leaked ? "border-red-500/30 bg-red-500/[0.07]" : "border-emerald-500/30 bg-emerald-500/[0.07]"}`}>
+              <div className={`rounded-2xl border p-5 ${leaked ? "border-red-500/30 bg-red-500/[0.07]" : "border-emerald-500/30 bg-emerald-500/[0.07]"}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-white">{result.host}</span>
                   <span className={`text-xs font-semibold rounded-full px-3 py-1 ${leaked ? "bg-red-500/15 text-red-300" : "bg-emerald-500/15 text-emerald-300"}`}>
@@ -135,7 +181,7 @@ export default function Home() {
               </div>
 
               {result.firstShareMs != null && (
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                <div className={`${card} p-5`}>
                   <div className="grid grid-cols-[56px_1fr] gap-y-3 text-sm">
                     <div className="font-medium text-zinc-500">0.00s</div>
                     <div className="flex gap-2 text-zinc-200"><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />A visitor opens your homepage.</div>
@@ -151,7 +197,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="rounded-xl border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
+              <div className="rounded-2xl border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
                 <b className="font-medium text-white">Don&apos;t take our word for it.</b>
                 <p className="mt-2 text-zinc-400">Open your site in Chrome → press <b className="text-zinc-200">F12</b> → <b className="text-zinc-200">Network</b> tab → <b className="text-zinc-200">Ctrl+F</b> → paste this:</p>
                 {result.verifySearch && (
@@ -167,7 +213,7 @@ export default function Home() {
             {/* col 2: the open finding */}
             <div className="space-y-4">
               {result.explainers.map((ex) => (
-                <div key={ex.key} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                <div key={ex.key} className={`${card} p-5`}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${sevChip(ex.severity)}`}>{ex.severity}</span>
                     <span className="font-medium text-white">{ex.title}</span>
@@ -185,9 +231,9 @@ export default function Home() {
               ))}
             </div>
 
-            {/* col 3: locked panel — button below the cards (no overlap) */}
+            {/* col 3: locked panel */}
             {result.lockedCount > 0 ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+              <div className={`${card} p-5`}>
                 <p className="font-medium text-white">{result.lockedCount} more finding{result.lockedCount > 1 ? "s" : ""}</p>
                 <p className="text-xs text-zinc-500 mb-4">Hidden on the free scan.</p>
                 <div className="space-y-2.5">
@@ -209,7 +255,7 @@ export default function Home() {
                 </button>
               </div>
             ) : leaked ? (
-              <div className="rounded-xl border p-5 text-center" style={{ borderColor: "rgba(227,179,65,0.4)", background: "rgba(227,179,65,0.08)" }}>
+              <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "rgba(227,179,65,0.4)", background: "rgba(227,179,65,0.08)" }}>
                 <p className="font-semibold text-white">Get {result.host} fixed</p>
                 <p className="text-sm text-zinc-400 mt-1 mb-4">Book a free 15-minute consultation — we&apos;ll walk you through the finding, with the proof, and how to fix it.</p>
                 <button onClick={openConsult} className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
@@ -220,7 +266,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Consultation modal */}
+      {/* ---------- consultation modal ---------- */}
       {showConsult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowConsult(false)}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -253,68 +299,154 @@ export default function Home() {
 
       {!result && (
         <>
-          <section className="border-y border-white/10 bg-white/[0.02]">
-            <div className="mx-auto max-w-5xl px-5 py-16 grid sm:grid-cols-3 gap-8 text-center">
-              {[
-                ["1. Scan", "We load your real site and record every tracker that fires before consent — with timestamps."],
-                ["2. Prove", "You get a plain-English report with the actual network log as proof, not vague claims."],
-                ["3. Fix & monitor", "We show you exactly how to fix each issue, then re-scan on a schedule so it stays fixed."],
-              ].map(([h, p]) => (
-                <div key={h}><h3 className="font-semibold text-white">{h}</h3><p className="mt-2 text-sm text-zinc-400">{p}</p></div>
-              ))}
+          {/* ---------- evidence pairing ---------- */}
+          <section className="mx-auto max-w-6xl px-6 py-20">
+            <div className="text-center mb-10">
+              <p className={`${eyebrow} mb-3`} style={{ color: gold }}>What you get back</p>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>See the gap, then seal it.</h2>
             </div>
-          </section>
-
-          <section className="mx-auto max-w-5xl px-5 py-16">
-            <h2 className="text-2xl font-bold tracking-tight text-center text-white" style={{ fontFamily: "var(--font-display)" }}>What we check for</h2>
-            <div className="mt-8 grid sm:grid-cols-2 gap-4">
-              {[
-                ["Ad pixels firing before consent", "Meta, Google, LinkedIn & TikTok tags that share visitor IDs on page load — a CCPA/CPRA “sale/share.”"],
-                ["Ignored “Do Not Track” (GPC) signals", "State laws require honoring the browser opt-out signal automatically. Most sites don’t."],
-                ["Session recording (CIPA)", "Hotjar/FullStory/Clarity capturing what visitors type — the #1 “wiretapping” lawsuit issue of 2025."],
-                ["Video + Meta Pixel (VPPA)", "Tells Facebook which videos a visitor watched — a fast-growing class-action wave."],
-                ["A cookie banner that doesn’t block", "Termly/CookieYes installed but not gating anything — the Tractor Supply $1.35M pattern."],
-                ["Missing “Your Privacy Choices” opt-out", "Required for any business that sells or shares data."],
-              ].map(([h, p]) => (
-                <div key={h} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-                  <h3 className="font-medium text-zinc-100">{h}</h3><p className="mt-1.5 text-sm text-zinc-400">{p}</p>
+            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] items-stretch">
+              <div className={`${card} overflow-hidden`}>
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.08] font-mono text-[11px] text-zinc-500">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  Network · fired before the consent banner
+                  <span className="ml-auto rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] tracking-wide text-zinc-500">EXAMPLE</span>
                 </div>
-              ))}
+                <pre className="whitespace-pre-wrap break-all p-4 font-mono text-[12px] leading-[2] text-zinc-500">
+                  <div><span className="text-red-400 font-medium">GET</span>  snap.licdn.com/li.lms-analytics/insight.min.js</div>
+                  <div><span className="text-red-400 font-medium">GET</span>  www.google-analytics.com/g/collect?v=2&amp;tid=G-XXXX</div>
+                  <div><span className="text-red-400 font-medium">POST</span> px.ads.linkedin.com/collect</div>
+                  <div className="text-zinc-600">— consent banner rendered at 7.21s —</div>
+                </pre>
+              </div>
+              <div className={`${card} p-5 flex flex-col`}>
+                <p className="font-mono text-[11px] text-zinc-500 mb-4">VERDICT</p>
+                <p className="text-3xl font-bold leading-none" style={{ fontFamily: "var(--font-display)", color: gold }}>3 trackers</p>
+                <p className="text-sm text-zinc-500 mt-1.5 mb-5">fired before anyone consented</p>
+                <div className="space-y-2">
+                  {[["LinkedIn Insight Tag", "Sale/share", "text-red-300"], ["Google Analytics 4", "Gray area", "text-amber-300"]].map(([n, v, c]) => (
+                    <div key={n} className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px]">
+                      <span className="text-zinc-300">{n}</span><span className={c}>{v}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.01] px-3 py-2 text-[13px] text-zinc-600">
+                    <span>1 more finding</span><span>Locked</span>
+                  </div>
+                </div>
+                <p className="mt-auto pt-5 text-xs text-zinc-600">Your scan shows your own site&apos;s real captured requests.</p>
+              </div>
             </div>
           </section>
 
-          <section id="pricing" className="border-t border-white/10 bg-white/[0.02]">
-            <div className="mx-auto max-w-5xl px-5 py-16">
-              <h2 className="text-2xl font-bold tracking-tight text-center text-white" style={{ fontFamily: "var(--font-display)" }}>Simple pricing</h2>
-              <div className="mt-8 grid sm:grid-cols-3 gap-4">
-                {[
-                  { name: "Free scan", price: "$0", per: "", tag: "Find out where you stand", hot: false, feats: ["One-time homepage scan", "Your first finding, in full", "Self-verify instructions"] },
-                  { name: "Starter", price: "$99", per: "/mo", tag: "Stay compliant", hot: true, feats: ["1 site, key pages", "Weekly re-scans + alerts", "Step-by-step fix guide", "Email reports"] },
-                  { name: "Growth", price: "$299", per: "/mo", tag: "Multi-site & faster", hot: false, feats: ["Up to 5 sites", "Daily scans + GPC checks", "Consent-mode setup guidance", "Priority support"] },
-                ].map((t) => (
-                  <div key={t.name} className={`rounded-xl border p-6 bg-white/[0.03] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/30" : "border-white/10"}`}>
+          {/* ---------- bento ---------- */}
+          <section id="how" className="border-t border-white/[0.08] scroll-mt-16">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <div className="text-center mb-10">
+                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>How it works</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Four layers of cover.</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {BENTO.map((b) => (
+                  <div key={b.n} className={`${card} p-6 transition-colors hover:border-white/[0.16]`}>
+                    <p className="font-mono text-[11px] tracking-[0.15em] text-zinc-600">{b.n} · <span style={{ color: gold }}>{b.k.toUpperCase()}</span></p>
+                    <h3 className="mt-3 text-lg font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>{b.h}</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-zinc-400">{b.p}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- checks ---------- */}
+          <section id="checks" className="border-t border-white/[0.08] scroll-mt-16">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <div className="text-center mb-10">
+                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Coverage</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>What we stand guard against</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {CHECKS.map(([h, p]) => (
+                  <div key={h} className={`${card} p-5 transition-colors hover:border-white/[0.16]`}>
+                    <h3 className="font-medium text-zinc-100">{h}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-500">{p}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ---------- pricing ---------- */}
+          <section id="pricing" className="border-t border-white/[0.08] scroll-mt-16">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <div className="text-center mb-10">
+                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Pricing</p>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Simple pricing</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {TIERS.map((t) => (
+                  <div key={t.name} className={`rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
                     <div className="flex items-baseline justify-between">
                       <h3 className="font-semibold text-white">{t.name}</h3>
-                      {t.hot && <span className="text-xs font-medium" style={{ color: gold }}>Most popular</span>}
+                      {t.hot && <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: gold }}>Most popular</span>}
                     </div>
-                    <p className="mt-3 text-3xl font-bold text-white">{t.price}<span className="text-base font-normal text-zinc-500">{t.per}</span></p>
+                    <p className="mt-3 text-3xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t.price}<span className="text-base font-normal text-zinc-500">{t.per}</span></p>
                     <p className="text-sm text-zinc-500">{t.tag}</p>
-                    <ul className="mt-4 space-y-2 text-sm text-zinc-300">
-                      {t.feats.map((f) => <li key={f} className="flex gap-2"><svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden><path d="M4 10.5l4 4 8-9" stroke="#e3b341" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg><span>{f}</span></li>)}
+                    <ul className="mt-5 space-y-2 text-sm text-zinc-300">
+                      {t.feats.map((f) => <li key={f} className="flex gap-2"><Check /><span>{f}</span></li>)}
                     </ul>
                   </div>
                 ))}
               </div>
-              <p className="mt-6 text-center text-sm text-zinc-500">One-time done-with-you remediation audits also available. No access to your servers required.</p>
+              <p className="mt-6 text-center text-sm text-zinc-600">One-time done-with-you remediation audits also available. No access to your servers required.</p>
+            </div>
+          </section>
+
+          {/* ---------- CTA band ---------- */}
+          <section className="border-t border-white/[0.08]">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-14 text-center">
+                <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.12), transparent)" }} />
+                <div className="relative">
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Armor your site.</h2>
+                  <p className="mt-2 text-zinc-400">Free scan. No account. Results in under a minute.</p>
+                  <a href="#scan" className="mt-7 inline-block rounded-lg px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>Scan my site →</a>
+                </div>
+              </div>
             </div>
           </section>
         </>
       )}
 
-      <footer className="border-t border-white/10">
-        <div className="mx-auto max-w-5xl px-5 py-8 text-sm text-zinc-500 flex flex-col sm:flex-row justify-between gap-2">
-          <span>© {new Date().getFullYear()} <span className="font-bold text-zinc-300" style={{ fontFamily: "var(--font-display)" }}>Auramite</span> · <a href="/privacy" className="hover:text-white">Privacy</a> · <a href="/terms" className="hover:text-white">Terms</a></span>
-          <span>Plain-English explanation of measurable findings — not legal advice.</span>
+      {/* ---------- footer ---------- */}
+      <footer className="relative overflow-hidden border-t border-white/[0.08]">
+        <div className="mx-auto max-w-6xl px-6 pt-14 pb-4">
+          <div className="relative z-10 flex flex-col sm:flex-row justify-between gap-10">
+            <div className="max-w-[240px]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
+              </div>
+              <p className="mt-2.5 text-[13px] leading-relaxed text-zinc-600">Armor for your site. We watch it like an eagle. Plain-English explanation of measurable findings — not legal advice.</p>
+            </div>
+            <div className="flex gap-14 text-[13px]">
+              <div className="flex flex-col gap-2.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-600">Product</span>
+                <a href="#scan" className="text-zinc-400 hover:text-white transition-colors">Free scan</a>
+                <a href="#how" className="text-zinc-400 hover:text-white transition-colors">How it works</a>
+                <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors">Pricing</a>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-600">Company</span>
+                <a href="/privacy" className="text-zinc-400 hover:text-white transition-colors">Privacy</a>
+                <a href="/terms" className="text-zinc-400 hover:text-white transition-colors">Terms</a>
+                <a href="mailto:hello@auramite.io" className="text-zinc-400 hover:text-white transition-colors">Contact</a>
+              </div>
+            </div>
+          </div>
+          <p className="relative z-10 mt-12 text-xs text-zinc-700">© {new Date().getFullYear()} Auramite</p>
+          <div aria-hidden className="pointer-events-none select-none -mt-4 text-center">
+            <span className="font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "17vw", lineHeight: 1, backgroundImage: "linear-gradient(90deg, rgba(242,202,99,0) 0%, rgba(242,202,99,0.04) 30%, rgba(242,202,99,0.13) 50%, rgba(242,202,99,0.04) 70%, rgba(242,202,99,0) 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" }}>AURAMITE</span>
+          </div>
         </div>
       </footer>
     </main>

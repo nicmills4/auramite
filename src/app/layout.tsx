@@ -19,9 +19,9 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Auramite — See what your website is leaking",
+  title: "Auramite — Armor your site against consumer data leaks",
   description:
-    "Free privacy scan: find out which trackers your website sends visitor data to before anyone consents — the exact issue behind 2025's privacy fines and lawsuits.",
+    "Free privacy scan: find every tracker that hands visitor data to advertisers before anyone consents, get the proof and the fix, then let Auramite stand watch so it stays sealed.",
 };
 
 export default function RootLayout({
