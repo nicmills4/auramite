@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Verify Similarweb API access BEFORE spending trial quota on the whole list.
-// Usage: node check-similarweb.mjs [domain]
-import { fetchSimilarweb } from './lib/enrich.mjs';
+// Usage: node cli/check-similarweb.mjs [domain]
+import { fetchSimilarweb } from '../lib/enrich.mjs';
 
 const domain = process.argv[2] || 'nytimes.com';
 const key = process.env.SIMILARWEB_API_KEY;

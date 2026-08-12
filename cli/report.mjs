@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // Generate a standalone, send-ready proof page for one site.
-// Usage: node report.mjs <url>
+// Usage: node cli/report.mjs <url>
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanOne, hostOf, normalizeUrl } from './lib/scanner.mjs';
-import { renderProofPage } from './lib/proofpage.mjs';
+import { scanOne, hostOf, normalizeUrl } from '../lib/scanner.mjs';
+import { renderProofPage } from '../lib/proofpage.mjs';
 
 const arg = process.argv[2];
-if (!arg) { console.error('Usage: node report.mjs <url>'); process.exit(1); }
+if (!arg) { console.error('Usage: node cli/report.mjs <url>'); process.exit(1); }
 const url = normalizeUrl(arg);
 
 const browser = await chromium.launch();

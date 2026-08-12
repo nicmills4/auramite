@@ -2,7 +2,7 @@
 // Batch scanner + litigation-exposure scorer.
 //
 // Usage:
-//   node batch.mjs <file.csv> [--limit N] [--concurrency K] [--no-gpc]
+//   node cli/batch.mjs <file.csv> [--limit N] [--concurrency K] [--no-gpc]
 //
 // CSV: one URL per line; an optional 2nd field after ';' or ',' is treated as a
 // popularity rank (PublicWWW exports this). Set SIMILARWEB_API_KEY for real traffic.
@@ -10,10 +10,10 @@
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanOne, hostOf, stamp } from './lib/scanner.mjs';
-import { getAudience } from './lib/enrich.mjs';
-import { scoreRisk } from './lib/risk.mjs';
-import { loadTargets } from './lib/loader.mjs';
+import { scanOne, hostOf, stamp } from '../lib/scanner.mjs';
+import { getAudience } from '../lib/enrich.mjs';
+import { scoreRisk } from '../lib/risk.mjs';
+import { loadTargets } from '../lib/loader.mjs';
 
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith('--'));
@@ -22,7 +22,7 @@ const concurrency = numFlag('--concurrency', 4);
 const sendGPC = !args.includes('--no-gpc');
 function numFlag(name, def) { const i = args.indexOf(name); return i >= 0 && args[i + 1] ? parseInt(args[i + 1], 10) : def; }
 
-if (!file) { console.error('Usage: node batch.mjs <file.csv> [--limit N] [--concurrency K] [--no-gpc]'); process.exit(1); }
+if (!file) { console.error('Usage: node cli/batch.mjs <file.csv> [--limit N] [--concurrency K] [--no-gpc]'); process.exit(1); }
 
 // --- load targets: bare URL list OR rich B2B export (Apollo/ZoomInfo/Data Axle) ---
 const rows = (await loadTargets(file)).slice(0, limit);

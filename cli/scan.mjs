@@ -2,20 +2,20 @@
 // Privacy audit scanner — single/few-URL CLI.
 //
 // Usage:
-//   node scan.mjs <url> [url2 ...]
-//   node scan.mjs --no-gpc <url>     # run without the GPC signal (to compare)
+//   node cli/scan.mjs <url> [url2 ...]
+//   node cli/scan.mjs --no-gpc <url>     # run without the GPC signal (to compare)
 //
 // For a CSV of many domains, use batch.mjs instead.
 
 import { chromium } from 'playwright';
-import { scanOne, renderConsole, normalizeUrl } from './lib/scanner.mjs';
+import { scanOne, renderConsole, normalizeUrl } from '../lib/scanner.mjs';
 
 const rawArgs = process.argv.slice(2);
 const sendGPC = !rawArgs.includes('--no-gpc');
 const urls = rawArgs.filter((a) => !a.startsWith('--')).map(normalizeUrl);
 
 if (urls.length === 0) {
-  console.error('Usage: node scan.mjs <url> [url2 ...] [--no-gpc]');
+  console.error('Usage: node cli/scan.mjs <url> [url2 ...] [--no-gpc]');
   process.exit(1);
 }
 

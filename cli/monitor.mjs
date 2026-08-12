@@ -3,15 +3,15 @@
 // This is what the subscription sells: "we re-check and tell you when something changes."
 // Exit code 1 when a new leak appeared (so cron can trigger an alert email).
 //
-// Usage: node monitor.mjs <url>
+// Usage: node cli/monitor.mjs <url>
 import { chromium } from 'playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanOne, hostOf, normalizeUrl } from './lib/scanner.mjs';
-import { signalsOf, diffSignals } from './lib/diff.mjs';
+import { scanOne, hostOf, normalizeUrl } from '../lib/scanner.mjs';
+import { signalsOf, diffSignals } from '../lib/diff.mjs';
 
 const arg = process.argv[2];
-if (!arg) { console.error('Usage: node monitor.mjs <url>'); process.exit(2); }
+if (!arg) { console.error('Usage: node cli/monitor.mjs <url>'); process.exit(2); }
 const url = normalizeUrl(arg);
 const host = hostOf(url);
 const snapPath = join('customers', host, 'monitor.json');

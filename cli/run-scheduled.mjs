@@ -4,7 +4,7 @@
 // last snapshot to detect NEW leaks, renders the proof page, emails each owner their
 // report, and emails you a run summary. Designed to run on a cron (or a Cloud Run Job).
 //
-// Usage: node run-scheduled.mjs [whitelist.json] [--force]
+// Usage: node cli/run-scheduled.mjs [whitelist.json] [--force]
 //   --force  scan every site regardless of cadence (for testing)
 //
 // Swap points for production: lib/store.mjs (→ Postgres) and lib/notify.mjs (→ Resend).
@@ -12,13 +12,13 @@
 import { chromium } from 'playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanOne, hostOf, normalizeUrl } from './lib/scanner.mjs';
-import { scoreRisk } from './lib/risk.mjs';
-import { buildExplainers } from './lib/explainers.mjs';
-import { renderProofPage } from './lib/proofpage.mjs';
-import { signalsOf, diffSignals } from './lib/diff.mjs';
-import { getState, saveState } from './lib/store.mjs';
-import { sendReport, sendSummary } from './lib/notify.mjs';
+import { scanOne, hostOf, normalizeUrl } from '../lib/scanner.mjs';
+import { scoreRisk } from '../lib/risk.mjs';
+import { buildExplainers } from '../lib/explainers.mjs';
+import { renderProofPage } from '../lib/proofpage.mjs';
+import { signalsOf, diffSignals } from '../lib/diff.mjs';
+import { getState, saveState } from '../lib/store.mjs';
+import { sendReport, sendSummary } from '../lib/notify.mjs';
 
 const args = process.argv.slice(2);
 const force = args.includes('--force');

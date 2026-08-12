@@ -6,13 +6,13 @@
 // don't false-flag a "missing" policy that actually exists, and produces a
 // remediation-oriented report under customers/<host>/.
 //
-// Usage: node diagnose.mjs <url>
+// Usage: node cli/diagnose.mjs <url>
 
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { TRACKERS } from './lib/signatures.mjs';
-import { scanOne, normalizeUrl, hostOf, stamp } from './lib/scanner.mjs';
+import { TRACKERS } from '../lib/signatures.mjs';
+import { scanOne, normalizeUrl, hostOf, stamp } from '../lib/scanner.mjs';
 
 // Inline signatures: if these appear in the SERVED HTML, the tracker is hardcoded
 // into the page/theme (fix = re-tag or move behind consent). If a tracker fires at
@@ -30,7 +30,7 @@ const INLINE_SIGS = [
 ];
 
 const url = normalizeUrl(process.argv[2] || '');
-if (!url) { console.error('Usage: node diagnose.mjs <url>'); process.exit(1); }
+if (!url) { console.error('Usage: node cli/diagnose.mjs <url>'); process.exit(1); }
 
 const browser = await chromium.launch({ headless: true });
 

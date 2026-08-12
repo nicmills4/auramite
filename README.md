@@ -21,15 +21,15 @@ evidence-backed reports. Detection → targeting → proof → outreach → reme
 ## CLI tools
 | Command | Purpose |
 | --- | --- |
-| `node scan.mjs <url> [--no-gpc]` | Scan one/few URLs, print findings. |
-| `node batch.mjs <list.csv> [--limit N]` | Scan + **score + rank** a list (Apollo CSV or URLs) → `reports/_exposure-*/`. |
-| `node diagnose.mjs <url>` | Deep single-site diagnostic → `customers/<host>/`. |
-| `node evidence.mjs <url>` | Adversarial raw network/cookie capture (verify findings by hand). |
-| `node report.mjs <url>` | Generate the standalone proof page → `customers/<host>/proof.html`. |
-| `node outreach.mjs <contacts.csv>` | Full LinkedIn kit: proof PNGs + `outreach-sheet.md` with filled messages. |
-| `node monitor.mjs <url>` | Re-scan, diff vs last snapshot, flag **new** leaks (the subscription engine). |
-| `node check-similarweb.mjs <domain>` | Test Similarweb API access (needs key). |
-| `node qualify.mjs <list.csv>` | Pre-filter a list by US + size via Similarweb (needs key). |
+| `node cli/scan.mjs <url> [--no-gpc]` | Scan one/few URLs, print findings. |
+| `node cli/batch.mjs <list.csv> [--limit N]` | Scan + **score + rank** a list (Apollo CSV or URLs) → `reports/_exposure-*/`. |
+| `node cli/diagnose.mjs <url>` | Deep single-site diagnostic → `customers/<host>/`. |
+| `node cli/evidence.mjs <url>` | Adversarial raw network/cookie capture (verify findings by hand). |
+| `node cli/report.mjs <url>` | Generate the standalone proof page → `customers/<host>/proof.html`. |
+| `node cli/outreach.mjs <contacts.csv>` | Full LinkedIn kit: proof PNGs + `outreach-sheet.md` with filled messages. |
+| `node cli/monitor.mjs <url>` | Re-scan, diff vs last snapshot, flag **new** leaks (the subscription engine). |
+| `node cli/check-similarweb.mjs <domain>` | Test Similarweb API access (needs key). |
+| `node cli/qualify.mjs <list.csv>` | Pre-filter a list by US + size via Similarweb (needs key). |
 
 ## The web app (`src/app/`)
 - `page.tsx` — marketing landing + **free inbound scanner** (live scan tool).

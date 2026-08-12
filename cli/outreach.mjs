@@ -3,24 +3,24 @@
 // For each prospect scored CRITICAL/HIGH: writes customers/<host>/proof.html + proof.png,
 // and assembles outreach-sheet.md with a filled connection note + first message.
 //
-// Usage: node outreach.mjs <contacts.csv> [--min-score 45] [--concurrency 5]
+// Usage: node cli/outreach.mjs <contacts.csv> [--min-score 45] [--concurrency 5]
 
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { scanOne, hostOf } from './lib/scanner.mjs';
-import { scoreRisk } from './lib/risk.mjs';
-import { loadTargets } from './lib/loader.mjs';
-import { renderProofPage } from './lib/proofpage.mjs';
-import { outreachHook } from './lib/explainers.mjs';
+import { scanOne, hostOf } from '../lib/scanner.mjs';
+import { scoreRisk } from '../lib/risk.mjs';
+import { loadTargets } from '../lib/loader.mjs';
+import { renderProofPage } from '../lib/proofpage.mjs';
+import { outreachHook } from '../lib/explainers.mjs';
 
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith('--'));
 const minScore = numFlag('--min-score', 45);  // HIGH+ by default
 const concurrency = numFlag('--concurrency', 5);
 function numFlag(n, d) { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? parseInt(args[i + 1], 10) : d; }
-if (!file) { console.error('Usage: node outreach.mjs <contacts.csv> [--min-score N]'); process.exit(1); }
+if (!file) { console.error('Usage: node cli/outreach.mjs <contacts.csv> [--min-score N]'); process.exit(1); }
 
 const targets = await loadTargets(file);
 console.log(`Loaded ${targets.length} contacts. Scanning + scoring...\n`);
