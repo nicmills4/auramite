@@ -20,18 +20,18 @@ from the same repo, with a different start command.
 
 1. In the Auramite Railway project: **New → GitHub Repo →** `nicmills4/auramite`.
    Name it `monitor`.
-2. **Settings → Deploy → Custom Start Command:**
+2. **Settings → Config-as-code →** set the config file path to:
    ```
-   npm run monitor
+   railway.monitor.json
    ```
-3. **Settings → Cron Schedule:**
-   ```
-   0 8 * * *
-   ```
-   Daily at 08:00 UTC. Run it daily even though most pages are weekly — the
-   runner decides what is actually due, so a weekly page is picked up on its own
-   day and a `DAILY` page gets scanned every day. A weekly cron would leave daily
-   subscribers unscanned six days out of seven.
+   That file sets the start command, the schedule, and `restartPolicyType: NEVER`.
+   It lives in its own file rather than `railway.json` on purpose: a root
+   `railway.json` applies to *every* service built from this repo, which would
+   turn the web app into a cron job and take the site down.
+3. **Deploy it once.** A service that has never deployed has nothing to schedule,
+   and the Cron Schedule field has no effect until a deployment exists. If
+   connecting the repo did not trigger a build, push a commit or use
+   **Deploy → Redeploy**.
 4. **Variables** — the monitor needs its own copy:
 
    | Variable | Value |
@@ -56,9 +56,18 @@ not fail the run.
 generated as TypeScript with extensionless imports that plain `node` cannot
 resolve, so the runner is `.mts` and needs `tsx` present in production.
 
-**Overlapping runs are not guarded.** There is no lock. With a daily schedule and
-a scan taking ~25s per page, a run would need roughly 3,400 pages to still be
-going when the next fires. Worth adding a lock before that becomes plausible.
+**Railway skips an overlapping run rather than starting a second one.** If the
+previous run is still going when the next fires, that firing is dropped — so
+there is no double-scanning, but a run that hangs stops all monitoring until it
+is killed. Combined with the explicit `process.exit(0)`, that is the whole
+protection; there is no application-level lock, which is fine while a run takes
+seconds per page.
+
+**The schedule is UTC**, and the minimum interval Railway allows is 5 minutes.
+
+**Both services rebuild on every push**, since they share a repo. Harmless, just
+noisy — the monitor image is the same one the web app uses, which is why it
+already has Chromium.
 
 **Rehearse before the first real send.** `--dry-run` performs real scans and
 writes the exact emails to `data/outbox/` without sending them. Read one before
