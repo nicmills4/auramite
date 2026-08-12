@@ -11,7 +11,8 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "monitor": "tsx cli/run-scheduled.mts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
