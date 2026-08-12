@@ -43,12 +43,12 @@ const TIERS = [
     feats: ["Weekly scans of your homepage and key pages", "Every finding in full, with the proof", "Alerts the moment a new tracker appears", "Step-by-step fix guide", "Email support"],
   },
   {
-    name: "Growth", price: "$299", per: "/mo", tag: "Cover the whole site", hot: true,
-    feats: ["Everything in Starter", "We index and scan every publicly visible page", "Per-page findings, so nothing hides in a subpage", "GPC and consent-mode verification", "Email support"],
+    name: "Growth", price: "$299", per: "/mo", tag: "Cover the pages that matter", hot: true,
+    feats: ["Everything in Starter", "Up to 25 pages you choose — landing pages, checkout, blog", "Per-page findings, so nothing hides in a subpage", "GPC and consent-mode verification", "Email support"],
   },
   {
-    name: "Enterprise", price: "$999", per: "/mo", tag: "Full coverage, with a human", hot: false,
-    feats: ["Everything in Growth", "Daily scans across every page", "Live consultation to build your remediation plan", "Fix verification after each change", "Priority email support"],
+    name: "Enterprise", price: "$999", per: "/mo", tag: "Daily cover, with a human", hot: false,
+    feats: ["Everything in Growth", "Daily scans across every page you track", "Live consultation to build your remediation plan", "Fix verification after each change", "Priority email support"],
   },
 ];
 
@@ -90,6 +90,7 @@ export default function Home() {
   const [showConsult, setShowConsult] = useState(false);
   const [consultEmail, setConsultEmail] = useState("");
   const [consultSent, setConsultSent] = useState(false);
+  const [consultTier, setConsultTier] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [waitEmail, setWaitEmail] = useState("");
@@ -153,7 +154,7 @@ export default function Home() {
     finally { setLoading(false); }
   }
 
-  function openConsult() { setConsultSent(false); setShowConsult(true); }
+  function openConsult(tier?: string) { setConsultTier(tier ?? null); setConsultSent(false); setShowConsult(true); }
 
   function toggleEv(i: number) {
     setOpenEvs((s) => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n; });
@@ -224,7 +225,7 @@ export default function Home() {
     e.preventDefault();
     if (!consultEmail.trim()) return;
     try {
-      await fetch("/api/lead", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: consultEmail, url: result?.url, intent: "consultation" }) });
+      await fetch("/api/lead", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: consultEmail, url: result?.url, intent: consultTier ? `plan: ${consultTier}` : "consultation" }) });
     } catch { /* ignore */ }
     setConsultSent(true);
   }
@@ -434,7 +435,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <button onClick={openConsult} className="mt-5 w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>
+                <button onClick={() => openConsult()} className="mt-5 w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>
                   Schedule a consultation to view {result.lockedCount} more →
                 </button>
               </div>
@@ -442,7 +443,7 @@ export default function Home() {
               <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "rgba(227,179,65,0.4)", background: "rgba(227,179,65,0.08)" }}>
                 <p className="font-semibold text-white">Get {result.host} fixed</p>
                 <p className="text-sm text-zinc-400 mt-1 mb-4">Book a free 15-minute consultation — we&apos;ll walk you through the finding, with the proof, and how to fix it.</p>
-                <button onClick={openConsult} className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
+                <button onClick={() => openConsult()} className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
               </div>
             ) : null}
             </div>
@@ -543,19 +544,33 @@ export default function Home() {
             {consultSent ? (
               <div className="text-center py-4">
                 <p className="text-white font-semibold text-lg">Request received</p>
-                <p className="text-zinc-400 mt-2 text-sm">We&apos;ll email you shortly to lock in a 15-minute consultation and walk you through every finding on {result?.host}.</p>
+                <p className="text-zinc-400 mt-2 text-sm">
+                  {consultTier
+                    ? `We'll email you shortly to walk through the ${consultTier} plan and get your first scan scheduled.`
+                    : `We'll email you shortly to lock in a 15-minute consultation and walk you through every finding${result?.host ? ` on ${result.host}` : ""}.`}
+                </p>
               </div>
             ) : (
               <>
-                <h3 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>See everything we found</h3>
+                {/* The modal opens from two places — a scan result and a pricing tier —
+                    so the copy has to match whichever one the visitor came from. */}
+                <h3 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
+                  {consultTier ? `Get started with ${consultTier}` : "See everything we found"}
+                </h3>
                 <p className="text-sm text-zinc-400 mt-2">
-                  {result ? <>Your site has <span className="text-white font-medium">{result.totalFindings} issue{result.totalFindings > 1 ? "s" : ""}</span> — we&apos;ve shown you one. </> : null}
-                  Book a free 15-minute consultation and we&apos;ll walk through all of them, with the proof, and exactly how to fix each.
+                  {consultTier ? (
+                    <>Leave your email and we&apos;ll set up a short call to confirm which pages to watch, get your first scan scheduled, and answer anything before you pay.</>
+                  ) : (
+                    <>
+                      {result ? <>Your site has <span className="text-white font-medium">{result.totalFindings} issue{result.totalFindings > 1 ? "s" : ""}</span> — we&apos;ve shown you one. </> : null}
+                      Book a free 15-minute consultation and we&apos;ll walk through all of them, with the proof, and exactly how to fix each.
+                    </>
+                  )}
                 </p>
                 <form onSubmit={submitConsult} className="mt-4 space-y-2">
                   <input type="email" required value={consultEmail} onChange={(e) => setConsultEmail(e.target.value)} placeholder="you@company.com"
                     className="w-full rounded-lg bg-white/[0.05] border border-white/15 px-4 py-2.5 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]" />
-                  <button className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Request my consultation</button>
+                  <button className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>{consultTier ? "Request a call" : "Request my consultation"}</button>
                 </form>
                 {CALENDLY_URL && <a href={CALENDLY_URL} target="_blank" rel="noreferrer" className="block text-center text-sm mt-3" style={{ color: gold }}>Or grab a time directly →</a>}
                 <p className="text-[11px] text-zinc-600 mt-3 text-center">No spam. We&apos;ll only use your email to schedule.</p>
@@ -656,7 +671,7 @@ export default function Home() {
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 {TIERS.map((t, i) => (
-                  <div key={t.name} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
+                  <div key={t.name} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`flex flex-col rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
                     <div className="flex items-baseline justify-between">
                       <h3 className="font-semibold text-white">{t.name}</h3>
                       {t.hot && <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: gold }}>Most popular</span>}
@@ -666,6 +681,13 @@ export default function Home() {
                     <ul className="mt-5 space-y-2 text-sm text-zinc-300">
                       {t.feats.map((f) => <li key={f} className="flex gap-2"><Check /><span>{f}</span></li>)}
                     </ul>
+                    <button
+                      onClick={() => openConsult(t.name)}
+                      className={`mt-6 w-full rounded-lg py-2.5 text-sm font-semibold transition hover:brightness-110 ${t.hot ? "text-[#0b0a08]" : "border border-white/15 text-white hover:bg-white/[0.06]"}`}
+                      style={t.hot ? { background: gold } : undefined}
+                    >
+                      Get started
+                    </button>
                   </div>
                 ))}
               </div>
