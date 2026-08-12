@@ -68,6 +68,9 @@ export default function Home() {
   const [consultSent, setConsultSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [waitEmail, setWaitEmail] = useState("");
+  const [waitEmailSent, setWaitEmailSent] = useState(false);
+  const [showWaitEmail, setShowWaitEmail] = useState(false);
 
   // Drives the countdown and stage list while a scan is in flight.
   useEffect(() => {
@@ -105,6 +108,7 @@ export default function Home() {
     e.preventDefault();
     if (!url.trim()) return;
     setLoading(true); setError(""); setResult(null);
+    setShowWaitEmail(false); setWaitEmailSent(false); setWaitEmail("");
     try {
       const res = await fetch("/api/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) });
       const data = await res.json();
@@ -115,6 +119,17 @@ export default function Home() {
   }
 
   function openConsult() { setConsultSent(false); setShowConsult(true); }
+
+  // Hands the scan off to the server, which runs its own and emails the report —
+  // so it still lands if this tab is closed.
+  async function submitWaitEmail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waitEmail.trim()) return;
+    setWaitEmailSent(true);
+    try {
+      await fetch("/api/scan-email", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: waitEmail, url }) });
+    } catch { /* the report is already queued server-side on success; nothing useful to show here */ }
+  }
 
   function copyVerify() {
     if (!result?.verifySearch) return;
@@ -150,14 +165,12 @@ export default function Home() {
             <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
           </a>
-          <div className="hidden sm:flex items-center gap-8 text-[13px] text-zinc-500">
-            <a href="#how" className="hover:text-zinc-200 transition-colors">How it works</a>
-            <a href="#checks" className="hover:text-zinc-200 transition-colors">What we check</a>
-            <a href="#pricing" className="hover:text-zinc-200 transition-colors">Pricing</a>
+          <div className="flex items-center gap-5 sm:gap-8 text-[13px] text-zinc-500">
+            <a href="#how" className="hidden sm:inline hover:text-zinc-200 transition-colors">How it works</a>
+            <a href="#checks" className="hidden sm:inline hover:text-zinc-200 transition-colors">What we check</a>
+            <a href="#pricing" className="hidden sm:inline hover:text-zinc-200 transition-colors">Pricing</a>
+            <a href="#scan" className="hover:text-zinc-200 transition-colors">Scan</a>
           </div>
-          <a href="#scan" className="rounded-lg px-3.5 py-1.5 text-[13px] font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
-            Scan my site
-          </a>
         </div>
       </nav>
 
@@ -248,7 +261,32 @@ export default function Home() {
                 })}
               </ul>
 
-              <p className="mt-4 text-xs text-zinc-600">Keep this tab open — your results appear here the moment we&apos;re done.</p>
+              <div className="mt-4 border-t border-white/[0.08] pt-4">
+                {waitEmailSent ? (
+                  <p className="text-sm" style={{ color: gold }}>
+                    Done — we&apos;ll email your report to <span className="font-medium">{waitEmail}</span> when the scan finishes. You can close this tab.
+                  </p>
+                ) : showWaitEmail ? (
+                  <form onSubmit={submitWaitEmail} className="flex gap-2">
+                    <input
+                      type="email" required autoFocus value={waitEmail} onChange={(e) => setWaitEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="min-w-0 flex-1 rounded-lg bg-white/[0.05] border border-white/15 px-3 py-2 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]"
+                    />
+                    <button type="submit" className="shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
+                      Email it
+                    </button>
+                  </form>
+                ) : (
+                  <p className="text-xs text-zinc-600">
+                    Keep this tab open — results appear here the moment we&apos;re done. Or{" "}
+                    <button type="button" onClick={() => setShowWaitEmail(true)} className="font-medium underline underline-offset-2 hover:brightness-110" style={{ color: gold }}>
+                      email me the results instead
+                    </button>
+                    .
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

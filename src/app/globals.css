@@ -14,6 +14,10 @@
   --font-mono: var(--font-code);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background:
     radial-gradient(1200px 600px at 50% -10%, rgba(227, 179, 65, 0.08), transparent 60%),
@@ -153,5 +157,9 @@ body {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  html {
+    scroll-behavior: auto;
   }
 }

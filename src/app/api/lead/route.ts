@@ -1,29 +1,11 @@
 import { NextResponse } from "next/server";
 import { appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { resendSend, isEmail } from "../../../lib/email";
 
 export const runtime = "nodejs";
 
-const RESEND_KEY = process.env.RESEND_API_KEY;
 const NOTIFY_TO = process.env.LEAD_NOTIFY_EMAIL;           // where YOU get notified
-const FROM = process.env.LEAD_FROM_EMAIL || "Auramite <onboarding@resend.dev>"; // verified sender
-
-// Minimal Resend send (no SDK dependency). Best-effort — never throws to the caller.
-async function resendSend(opts: { to: string; subject: string; text: string; replyTo?: string }) {
-  if (!RESEND_KEY) return;
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      from: FROM,
-      to: opts.to,
-      subject: opts.subject,
-      text: opts.text,
-      ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
-    }),
-  });
-  if (!res.ok) console.error("Resend send failed:", res.status, await res.text().catch(() => ""));
-}
 
 export async function POST(req: Request) {
   let body: { email?: string; url?: string; intent?: string };
@@ -35,7 +17,7 @@ export async function POST(req: Request) {
   const email = (body?.email || "").toString().trim();
   const url = (body?.url || "").toString().trim();
   const intent = (body?.intent || "monitoring").toString().trim();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+  if (!isEmail(email)) {
     return NextResponse.json({ ok: false, error: "Enter a valid email." }, { status: 400 });
   }
 
