@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type LogLine = { text: string; danger?: boolean; ok?: boolean };
 type Explainer = { key: string; severity: "HIGH" | "MEDIUM"; title: string; paragraph: string; logLines: LogLine[]; rule: string };
+type TimelineEvent = { t: number; kind: "visit" | "signal" | "leak" | "locked" | "banner" | "clear"; label: string; detail?: string; tag?: string };
 type ScanResult = {
   ok: boolean; host: string; url: string; verdict: string; highCount: number;
   totalFindings: number; bannerMs: number | null; firstShareMs: number | null;
   hardShare: string[]; cmps: string[]; explainers: Explainer[];
-  locked: { severity: "HIGH" | "MEDIUM" }[]; lockedCount: number; verifySearch: string | null; error?: string;
+  locked: { severity: "HIGH" | "MEDIUM" }[]; lockedCount: number; verifySearch: string | null;
+  events?: TimelineEvent[]; error?: string;
 };
 
 const fmtT = (ms: number | null) => (ms == null ? "?" : (ms / 1000).toFixed(2) + "s");
@@ -36,9 +38,18 @@ const CHECKS = [
 ];
 
 const TIERS = [
-  { name: "Free scan", price: "$0", per: "", tag: "Find out where you stand", hot: false, feats: ["One-time homepage scan", "Your first finding, in full", "Self-verify instructions"] },
-  { name: "Starter", price: "$99", per: "/mo", tag: "Stay compliant", hot: true, feats: ["1 site, key pages", "Weekly re-scans + alerts", "Step-by-step fix guide", "Email reports"] },
-  { name: "Growth", price: "$299", per: "/mo", tag: "Multi-site & faster", hot: false, feats: ["Up to 5 sites", "Daily scans + GPC checks", "Consent-mode setup guidance", "Priority support"] },
+  {
+    name: "Starter", price: "$99", per: "/mo", tag: "Keep your homepage clean", hot: false,
+    feats: ["Weekly scans of your homepage and key pages", "Every finding in full, with the proof", "Alerts the moment a new tracker appears", "Step-by-step fix guide", "Email support"],
+  },
+  {
+    name: "Growth", price: "$299", per: "/mo", tag: "Cover the whole site", hot: true,
+    feats: ["Everything in Starter", "We index and scan every publicly visible page", "Per-page findings, so nothing hides in a subpage", "GPC and consent-mode verification", "Email support"],
+  },
+  {
+    name: "Enterprise", price: "$999", per: "/mo", tag: "Full coverage, with a human", hot: false,
+    feats: ["Everything in Growth", "Daily scans across every page", "Live consultation to build your remediation plan", "Fix verification after each change", "Priority email support"],
+  },
 ];
 
 // Indicative pacing for the wait UI — these are the scanner's real phases in
@@ -58,6 +69,19 @@ const Check = () => (
   </svg>
 );
 
+const EV_DOT: Record<TimelineEvent["kind"], string> = {
+  visit: "bg-emerald-500",
+  signal: "border-2 border-[#e3b341]",
+  leak: "bg-red-500",
+  locked: "bg-zinc-600",
+  banner: "border-2 border-zinc-500",
+  clear: "bg-emerald-500",
+};
+const EV_TAG: Record<string, string> = {
+  "Sale/share": "bg-red-500/15 text-red-300",
+  "Session recording": "bg-amber-500/15 text-amber-300",
+};
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,6 +95,11 @@ export default function Home() {
   const [waitEmail, setWaitEmail] = useState("");
   const [waitEmailSent, setWaitEmailSent] = useState(false);
   const [showWaitEmail, setShowWaitEmail] = useState(false);
+  const [replayT, setReplayT] = useState<number | null>(null); // null = idle, all events lit
+  const [openEvs, setOpenEvs] = useState<Set<number>>(new Set());
+  const replayRaf = useRef(0);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+  const replayedFor = useRef<ScanResult | null>(null);
 
   // Drives the countdown and stage list while a scan is in flight.
   useEffect(() => {
@@ -109,6 +138,12 @@ export default function Home() {
     if (!url.trim()) return;
     setLoading(true); setError(""); setResult(null);
     setShowWaitEmail(false); setWaitEmailSent(false); setWaitEmail("");
+    setOpenEvs(new Set());
+    // A replay in flight would otherwise be cancelled mid-way and leave replayT
+    // frozen, permanently dimming the next timeline and disabling Replay.
+    cancelAnimationFrame(replayRaf.current);
+    setReplayT(null);
+    replayedFor.current = null;
     try {
       const res = await fetch("/api/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) });
       const data = await res.json();
@@ -119,6 +154,53 @@ export default function Home() {
   }
 
   function openConsult() { setConsultSent(false); setShowConsult(true); }
+
+  function toggleEv(i: number) {
+    setOpenEvs((s) => { const n = new Set(s); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  }
+
+  // Replays the page load: events light up in sequence, on a compressed clock.
+  function runReplay(evs: TimelineEvent[]) {
+    if (evs.length < 2) return;
+    const maxT = Math.max(...evs.map((e) => e.t));
+    const DUR = 2600;
+    cancelAnimationFrame(replayRaf.current);
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = Math.min((now - start) / DUR, 1);
+      setReplayT(p * (maxT + 200));
+      if (p < 1) replayRaf.current = requestAnimationFrame(step);
+      else setReplayT(null);
+    };
+    setReplayT(0);
+    replayRaf.current = requestAnimationFrame(step);
+  }
+
+  // Auto-play once, but only when the timeline is actually on screen — stacked on
+  // mobile it sits well below the fold, and firing on arrival would spend the whole
+  // reveal before the user ever scrolls to it.
+  useEffect(() => {
+    const evs = result?.events;
+    const el = timelineRef.current;
+    if (!evs || evs.length < 2 || !el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (replayedFor.current === result) return;
+
+    let timer = 0;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting) || replayedFor.current === result) return;
+        replayedFor.current = result;
+        io.disconnect();
+        setReplayT(0); // hold the rows dark so the reveal starts from nothing
+        timer = window.setTimeout(() => runReplay(evs), 250);
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => { io.disconnect(); clearTimeout(timer); cancelAnimationFrame(replayRaf.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   // Hands the scan off to the server, which runs its own and emails the report —
   // so it still lands if this tab is closed.
@@ -169,13 +251,15 @@ export default function Home() {
             <a href="#how" className="hidden sm:inline hover:text-zinc-200 transition-colors">How it works</a>
             <a href="#checks" className="hidden sm:inline hover:text-zinc-200 transition-colors">What we check</a>
             <a href="#pricing" className="hidden sm:inline hover:text-zinc-200 transition-colors">Pricing</a>
-            <a href="#scan" className="hover:text-zinc-200 transition-colors">Scan</a>
+            <a href="#top" className="hover:text-zinc-200 transition-colors">Scan</a>
           </div>
         </div>
       </nav>
 
       {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden">
+      {/* #top lands on the whole hero, so the headline stays visible; #scan alone
+          would put the form under the nav and push the headline off-screen. */}
+      <section id="top" className="relative overflow-hidden scroll-mt-14">
         <div aria-hidden className="fade-in pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.14), transparent)" }} />
         <div aria-hidden className="fade-in pointer-events-none select-none absolute inset-0 flex items-center justify-center" style={{ animationDelay: "160ms" }}>
           <span className="watermark font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1 }}>AURAMITE</span>
@@ -295,10 +379,12 @@ export default function Home() {
       {/* ---------- results ---------- */}
       {result && (
         <section className="mx-auto max-w-6xl px-6 pt-12 pb-16">
-          <div className="grid gap-4 items-start md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 items-start lg:grid-cols-[1.05fr_0.95fr]">
 
-            {/* col 1: summary + timeline + verify */}
+            {/* ---- Results column ---- */}
             <div className="space-y-4">
+              <p className={eyebrow} style={{ color: gold }}>Results</p>
+
               <div className={`rounded-2xl border p-5 ${leaked ? "border-red-500/30 bg-red-500/[0.07]" : "border-emerald-500/30 bg-emerald-500/[0.07]"}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-white">{result.host}</span>
@@ -312,39 +398,6 @@ export default function Home() {
                 )}
               </div>
 
-              {result.firstShareMs != null && (
-                <div className={`${card} p-5`}>
-                  {/* Rows land in sequence so the order of events reads as a story. */}
-                  <div className="grid grid-cols-[56px_1fr] gap-y-3 text-sm">
-                    <div className="fade-up font-medium text-zinc-500">0.00s</div>
-                    <div className="fade-up flex gap-2 text-zinc-200"><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />A visitor opens your homepage.</div>
-                    <div className="fade-up font-medium text-red-400" style={{ animationDelay: "320ms" }}>{fmtT(result.firstShareMs)}</div>
-                    <div className="fade-up flex gap-2 text-zinc-200" style={{ animationDelay: "320ms" }}><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-red-500 shrink-0" /><span><b className="font-medium text-white">Data already sent to {result.hardShare.join(", ") || "advertisers"}.</b> No one was asked.</span></div>
-                    {result.bannerMs != null && (
-                      <>
-                        <div className="fade-up font-medium text-zinc-500" style={{ animationDelay: "700ms" }}>{fmtT(result.bannerMs)}</div>
-                        <div className="fade-up flex gap-2 text-zinc-400" style={{ animationDelay: "700ms" }}><span className="mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-500 shrink-0" />Your cookie banner appears — after the data already left.</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="rounded-2xl border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
-                <b className="font-medium text-white">Don&apos;t take our word for it.</b>
-                <p className="mt-2 text-zinc-400">Open your site in Chrome → press <b className="text-zinc-200">F12</b> → <b className="text-zinc-200">Network</b> tab → <b className="text-zinc-200">Ctrl+F</b> → paste this:</p>
-                {result.verifySearch && (
-                  <div className="mt-2 flex items-stretch gap-2">
-                    <code className="flex-1 break-all rounded bg-black/40 border border-white/10 px-2.5 py-2 text-xs font-mono" style={{ color: gold }}>{result.verifySearch}</code>
-                    <button onClick={copyVerify} className="shrink-0 rounded bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied!" : "Copy"}</button>
-                  </div>
-                )}
-                <p className="mt-2 text-xs text-zinc-500">That exact request fires <b className="text-zinc-400">before</b> your consent banner. Or check <span className="font-mono" style={{ color: gold }}>blacklight.themarkup.org</span>.</p>
-              </div>
-            </div>
-
-            {/* col 2: the open finding */}
-            <div className="space-y-4">
               {result.explainers.map((ex) => (
                 <div key={ex.key} className={`${card} p-5`}>
                   <div className="flex items-center gap-2 mb-2">
@@ -362,10 +415,8 @@ export default function Home() {
                   <p className="mt-3 pt-3 border-t border-white/10 text-[13px] text-zinc-500"><b className="font-medium text-zinc-400">The rule &amp; precedent:</b> {ex.rule}</p>
                 </div>
               ))}
-            </div>
 
-            {/* col 3: locked panel */}
-            {result.lockedCount > 0 ? (
+              {result.lockedCount > 0 ? (
               <div className={`${card} p-5`}>
                 <p className="font-medium text-white">{result.lockedCount} more finding{result.lockedCount > 1 ? "s" : ""}</p>
                 <p className="text-xs text-zinc-500 mb-4">Hidden on the free scan.</p>
@@ -394,6 +445,90 @@ export default function Home() {
                 <button onClick={openConsult} className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
               </div>
             ) : null}
+            </div>
+
+            {/* ---- Timeline column ---- */}
+            <div className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <p className={eyebrow} style={{ color: gold }}>Timeline</p>
+                {(result.events?.length ?? 0) > 1 && (
+                  <button
+                    onClick={() => { if (replayT == null && result.events) runReplay(result.events); }}
+                    aria-disabled={replayT != null}
+                    aria-label={replayT != null ? "Replaying the timeline" : "Replay the timeline"}
+                    className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 transition hover:text-white"
+                  >
+                    {replayT != null ? (
+                      <span className="font-mono tabular-nums" style={{ color: gold }}>{fmtT(replayT)}</span>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden><path d="M2.5 1.5l8 4.5-8 4.5z" fill="currentColor" /></svg>
+                        Replay
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {result.events && result.events.length > 0 && (
+                <div ref={timelineRef} className={`${card} p-5`}>
+                  <p className="mb-4 text-[13px] text-zinc-400">What happened on <span className="text-zinc-200">{result.host}</span>, second by second:</p>
+                  <ol role="list" aria-label="Page-load timeline">
+                    {result.events.map((ev, i) => {
+                      const lit = replayT == null || ev.t <= replayT;
+                      const last = i === (result.events?.length ?? 0) - 1;
+                      const open = openEvs.has(i);
+                      const label = (
+                        <span className="flex items-baseline gap-2">
+                          <span className={`text-sm ${ev.kind === "leak" ? "text-zinc-100" : ev.kind === "locked" ? "text-zinc-400" : "text-zinc-300"}`}>{ev.label}</span>
+                          {ev.tag && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${EV_TAG[ev.tag] || "bg-white/10 text-zinc-400"}`}>{ev.tag}</span>}
+                          {ev.kind === "locked" && <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-400">Locked</span>}
+                          {ev.detail && (
+                            <svg viewBox="0 0 12 12" className={`ml-auto h-3 w-3 shrink-0 self-center text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
+                              <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                      );
+                      return (
+                        <li key={i} className={`grid grid-cols-[52px_16px_1fr] gap-x-3 transition-all duration-300 ${lit ? "opacity-100 translate-y-0" : "opacity-10 translate-y-1"}`}>
+                          <span className={`pt-0.5 text-right font-mono text-xs tabular-nums ${ev.kind === "leak" ? "text-red-400" : "text-zinc-400"}`}>{fmtT(ev.t)}</span>
+                          <span className="relative flex justify-center">
+                            {!last && <span className="absolute top-4 -bottom-1 w-px bg-white/10" />}
+                            <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${EV_DOT[ev.kind]}`} />
+                          </span>
+                          {/* The detail sits OUTSIDE the toggle: it's a request URL people
+                              need to select and paste into DevTools, and text inside a
+                              button isn't selectable. */}
+                          <div className={last ? "pb-0" : "pb-4"}>
+                            {ev.detail ? (
+                              <button type="button" onClick={() => toggleEv(i)} aria-expanded={open} aria-controls={`ev-detail-${i}`} className="w-full cursor-pointer text-left">
+                                {label}
+                              </button>
+                            ) : label}
+                            {open && ev.detail && (
+                              <code id={`ev-detail-${i}`} className={`mt-2 block rounded bg-black/40 border border-white/10 px-2.5 py-1.5 font-mono text-xs text-zinc-400 ${ev.kind === "leak" ? "break-all" : "break-words"}`}>{ev.detail}</code>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
+
+              <div className="rounded-2xl border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
+                <b className="font-medium text-white">Don&apos;t take our word for it.</b>
+                <p className="mt-2 text-zinc-400">Open your site in Chrome → press <b className="text-zinc-200">F12</b> → <b className="text-zinc-200">Network</b> tab → <b className="text-zinc-200">Ctrl+F</b> → paste this:</p>
+                {result.verifySearch && (
+                  <div className="mt-2 flex items-stretch gap-2">
+                    <code className="flex-1 break-all rounded bg-black/40 border border-white/10 px-2.5 py-2 text-xs font-mono" style={{ color: gold }}>{result.verifySearch}</code>
+                    <button onClick={copyVerify} className="shrink-0 rounded bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied!" : "Copy"}</button>
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-zinc-500">That exact request fires <b className="text-zinc-400">before</b> your consent banner. Or check <span className="font-mono" style={{ color: gold }}>blacklight.themarkup.org</span>.</p>
+              </div>
+            </div>
 
           </div>
         </section>
@@ -470,9 +605,13 @@ export default function Home() {
               </div>
             </div>
           </section>
+        </>
+      )}
 
+      {/* The marketing sections stay mounted after a scan — the nav links point here. */}
+      <>
           {/* ---------- bento ---------- */}
-          <section id="how" className="scroll-mt-16">
+          <section id="how" className="scroll-mt-24">
             <div className="mx-auto max-w-6xl px-6 py-20">
               <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>How it works</p>
@@ -491,7 +630,7 @@ export default function Home() {
           </section>
 
           {/* ---------- checks ---------- */}
-          <section id="checks" className="scroll-mt-16">
+          <section id="checks" className="scroll-mt-24">
             <div className="mx-auto max-w-6xl px-6 py-20">
               <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Coverage</p>
@@ -509,7 +648,7 @@ export default function Home() {
           </section>
 
           {/* ---------- pricing ---------- */}
-          <section id="pricing" className="scroll-mt-16">
+          <section id="pricing" className="scroll-mt-24">
             <div className="mx-auto max-w-6xl px-6 py-20">
               <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Pricing</p>
@@ -547,8 +686,7 @@ export default function Home() {
               </div>
             </div>
           </section>
-        </>
-      )}
+      </>
 
       {/* ---------- footer ---------- */}
       <footer className="relative overflow-hidden">

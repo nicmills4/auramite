@@ -33,8 +33,17 @@ export async function POST(req: Request) {
     const explainers = buildExplainers(scan);
     const hard = scan.hardSaleShare || [];
 
+    // Single source of truth for what the free tier may name. Hard sale/share vendors
+    // are already stated in the first finding; session recorders only when that IS the
+    // shown finding. Everything else stays anonymous — including in verifySearch, which
+    // would otherwise name a locked vendor through its request URL.
+    const disclosed = new Set<string>(hard.map((t: { name: string }) => t.name));
+    if (explainers[0]?.key === "session-replay") {
+      for (const r of scan.sessionRecorders || []) disclosed.add(r.name);
+    }
+
     // Exact string a visitor can paste into DevTools → Network → Ctrl+F to see it fire.
-    const primary = hard[0] || (scan.sessionRecorders || [])[0] || (scan.trackers || [])[0];
+    const primary = ((scan.trackers || []) as Record<string, any>[]).find((t) => disclosed.has(t.name) && t.sample);
     let verifySearch: string | null = null;
     try {
       if (primary?.sample) { const u = new URL(primary.sample); verifySearch = u.hostname.replace(/^www\./, "") + u.pathname; }
@@ -47,6 +56,76 @@ export async function POST(req: Request) {
       paragraph: e.paragraph, logLines: e.logLines, rule: e.rule,
     }));
     const locked = explainers.slice(1).map((e: { severity: string }) => ({ severity: e.severity }));
+
+    // ---- Timeline events, gated server-side with the same disclosure rule ----
+    // Names appear only for trackers the free tier already reveals (hard sale/share,
+    // plus session recorders when that is the shown finding). Everything else fires
+    // as an anonymous event: real timestamp, no vendor.
+    type Ev = { t: number; kind: string; label: string; detail?: string; tag?: string };
+    const fmtT = (ms: number) => (ms / 1000).toFixed(2) + "s";
+    const short = (u: string) => {
+      try { const x = new URL(u); const s = x.hostname.replace(/^www\./, "") + x.pathname; return s.length > 64 ? s.slice(0, 64) + "…" : s; }
+      catch { return ""; }
+    };
+
+    const events: Ev[] = [{ t: 0, kind: "visit", label: "A visitor lands on your homepage" }];
+    if (scan.sentGPC) {
+      events.push({
+        t: 0, kind: "signal",
+        label: "Their browser asks not to be tracked",
+        detail: "Sec-GPC: 1 — the Global Privacy Control opt-out signal state laws require sites to honor",
+      });
+    }
+
+    const fired = ((scan.trackers || []) as Record<string, any>[])
+      .filter((t) => typeof t.t === "number")
+      .sort((a, b) => a.t - b.t);
+    const named = fired.filter((t) => disclosed.has(t.name)).slice(0, 5);
+    const anon = fired.filter((t) => !named.includes(t));
+
+    for (const t of named) {
+      events.push({
+        t: t.t, kind: "leak",
+        label: t.category === "session-recording" ? `${t.name} begins recording the visit` : `${t.name} receives visitor data`,
+        detail: `${t.method || "GET"}  ${short(t.sample)}`,
+        tag: t.category === "session-recording" ? "Session recording" : "Sale/share",
+      });
+    }
+
+    const SHOWN_ANON = 5;
+    for (const t of anon.slice(0, SHOWN_ANON)) {
+      events.push({ t: t.t, kind: "locked", label: "Another tracker fires", detail: "Vendor identified — shown in your full report" });
+    }
+    // The remainder collapses into one row. It carries the LAST of their timestamps so
+    // it never sorts above the banner while representing a tracker that fired after it —
+    // the banner's "everything above happened first" line has to stay literally true.
+    const restCount = anon.length - SHOWN_ANON;
+    if (restCount > 0) {
+      const rest = anon.slice(SHOWN_ANON);
+      const firstT = rest[0].t;
+      const lastT = rest[rest.length - 1].t;
+      events.push({
+        t: lastT, kind: "locked",
+        label: `${restCount} more tracker${restCount === 1 ? "" : "s"} fire${restCount === 1 ? "s" : ""}`,
+        detail: firstT === lastT
+          ? "All identified — shown in your full report"
+          : `Between ${fmtT(firstT)} and ${fmtT(lastT)} — all identified in your full report`,
+      });
+    }
+
+    if (scan.bannerMs != null) {
+      const cmpName = (scan.cmps || [])[0]?.name;
+      const leaksBefore = events.some((e) => (e.kind === "leak" || e.kind === "locked") && e.t < scan.bannerMs);
+      events.push({
+        t: scan.bannerMs, kind: "banner",
+        label: `${cmpName ? `${cmpName} consent banner` : "The consent banner"} appears`,
+        detail: leaksBefore ? "Everything above happened before anyone could say no" : undefined,
+      });
+    }
+    events.sort((a, b) => a.t - b.t);
+    if (!events.some((e) => e.kind === "leak" || e.kind === "locked")) {
+      events.push({ t: Math.max(...events.map((e) => e.t)), kind: "clear", label: "No pre-consent tracker fires detected" });
+    }
 
     return NextResponse.json({
       ok: true,
@@ -63,6 +142,7 @@ export async function POST(req: Request) {
       locked,
       lockedCount: locked.length,
       verifySearch,
+      events,
     });
   } catch {
     return NextResponse.json(
