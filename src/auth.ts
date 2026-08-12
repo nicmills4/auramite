@@ -35,6 +35,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         data: { name: user.email ?? undefined },
       });
       await db.user.update({ where: { id: user.id }, data: { orgId: org.id } });
+      // Seed the first report recipient so a new customer receives their reports
+      // before touching settings. Guarded: a hiccup here must not break sign-in.
+      if (user.email) {
+        await db.reportRecipient
+          .create({ data: { orgId: org.id, email: user.email.toLowerCase() } })
+          .catch(() => {});
+      }
     },
   },
 });

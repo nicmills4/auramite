@@ -63,7 +63,16 @@ export async function findDuePages(opts: { force?: boolean; orgId?: string } = {
       },
     },
     include: {
-      site: { include: { org: { include: { users: { select: { email: true } } } } } },
+      site: {
+        include: {
+          org: {
+            include: {
+              users: { select: { email: true } },
+              reportRecipients: { select: { email: true } },
+            },
+          },
+        },
+      },
       // Only the previous scan is needed — it holds the signals to diff against.
       scans: { orderBy: { ranAt: "desc" }, take: 1 },
     },
@@ -141,7 +150,11 @@ type Candidates = Awaited<ReturnType<typeof findDuePages>>["candidates"];
  */
 export function recipientsForOrg(candidates: Candidates, orgId: string): string[] {
   const org = candidates.find((p) => p.site.orgId === orgId)?.site.org;
-  const emails = org?.users.map((u) => u.email) ?? [];
+  // Configured recipients win. Falling back to members' login addresses is a
+  // safety net for an org the backfill somehow missed — a customer must never
+  // silently stop receiving the reports they pay for.
+  const configured = org?.reportRecipients.map((r) => r.email) ?? [];
+  const emails = configured.length ? configured : (org?.users.map((u) => u.email) ?? []);
   return [...new Set(emails.map((e) => e.toLowerCase()))];
 }
 

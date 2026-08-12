@@ -103,9 +103,10 @@ model Organization {
 
   stripeCustomerId String? @unique
 
-  users        User[]
-  sites        Site[]
-  subscription Subscription?
+  users            User[]
+  sites            Site[]
+  subscription     Subscription?
+  reportRecipients ReportRecipient[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -128,6 +129,23 @@ model Subscription {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+}
+
+/// Where an organization's monitoring reports are sent. Separate from User
+/// because the person who signs in is often not the person who wants the
+/// reports — and a customer may want several. Emails are stored lowercased so
+/// the unique constraint actually prevents duplicates.
+model ReportRecipient {
+  id String @id @default(cuid())
+
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  email     String
+  createdAt DateTime @default(now())
+
+  // Doubles as the orgId index — no separate @@index needed.
+  @@unique([orgId, email])
 }
 
 // ---------------------------------------------------------------- scan targets

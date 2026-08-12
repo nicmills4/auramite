@@ -40,6 +40,7 @@ from the same repo, with a different start command.
    | `RESEND_API_KEY` | same as the web service |
    | `REPORT_FROM_EMAIL` | `Auramite <reports@auramite.io>` |
    | `OPERATOR_EMAIL` | where the run summary goes |
+   | `NEXT_PUBLIC_BASE_URL` | `https://auramite.io` — the "manage your monitoring" link in customer reports. Unset, it falls back to the production URL, which is silently wrong on staging. |
 
    Without `OPERATOR_EMAIL` customers still get their reports, but you get no
    summary — so a run that scanned nothing looks identical to a healthy one.
