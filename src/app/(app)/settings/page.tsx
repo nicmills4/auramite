@@ -3,16 +3,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { PLANS, planFor } from "@/lib/plans";
-import { removePage, togglePage, signOutAction } from "./actions";
+import { removePage, togglePage } from "./actions";
 import { AddPageForm } from "./add-page-form";
 import { CheckoutButton, PortalButton } from "./billing-buttons";
+import { gold, card, eyebrow, fmtDate } from "../ui";
 
-export const metadata: Metadata = { title: "Your account — Auramite" };
+export const metadata: Metadata = { title: "Settings — Auramite" };
 export const dynamic = "force-dynamic";
-
-const gold = "#e3b341";
-const card = "rounded-2xl border border-white/[0.08] bg-white/[0.02]";
-const eyebrow = "font-mono text-[11px] uppercase tracking-[0.2em]";
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   ACTIVE: { text: "Active", cls: "bg-emerald-500/15 text-emerald-300" },
@@ -22,10 +19,7 @@ const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   INCOMPLETE: { text: "Incomplete", cls: "bg-amber-500/15 text-amber-300" },
 };
 
-const fmtDate = (d: Date | null) =>
-  d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-
-export default async function AccountPage({
+export default async function SettingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ checkout?: string }>;
@@ -56,23 +50,7 @@ export default async function AccountPage({
   const atLimit = pages.length >= pageLimit;
 
   return (
-    <main className="flex-1 text-zinc-300">
-      <nav className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#0b0a08]/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-          <a href="/" className="flex items-center gap-1.5">
-            <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
-          </a>
-          <div className="flex items-center gap-5 text-[13px] text-zinc-500">
-            <span className="hidden sm:inline">{user.email}</span>
-            <form action={signOutAction}>
-              <button type="submit" className="transition hover:text-zinc-200">Sign out</button>
-            </form>
-          </div>
-        </div>
-      </nav>
-
-      <div className="mx-auto max-w-5xl space-y-8 px-6 py-12">
+    <div className="mx-auto max-w-5xl space-y-8 px-6 py-12">
         {checkout === "success" && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4 text-sm text-emerald-200">
             Payment received. Your subscription may take a few seconds to appear here while Stripe confirms it.
@@ -205,7 +183,6 @@ export default async function AccountPage({
             )}
           </div>
         </section>
-      </div>
-    </main>
+    </div>
   );
 }

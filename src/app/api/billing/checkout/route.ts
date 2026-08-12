@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       // methods are eligible per customer. Hardcoding it to ["card"] would lock
       // out everything else and cost conversion.
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${BASE}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE}/account?checkout=cancelled`,
+      success_url: `${BASE}/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE}/settings?checkout=cancelled`,
       allow_promotion_codes: true,
       // Labels the flow in the Stripe Dashboard so checkout funnels can be
       // compared. Fixed, not per-request — a rotating value would not group.

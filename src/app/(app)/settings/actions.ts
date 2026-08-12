@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { planFor } from "@/lib/plans";
 
@@ -77,7 +77,7 @@ export async function addPage(_prev: AddState, formData: FormData): Promise<AddS
     return { error: "That page is already on your list." };
   }
 
-  revalidatePath("/account");
+  revalidatePath("/settings");
   return { added: parsed.url };
 }
 
@@ -99,7 +99,7 @@ export async function removePage(formData: FormData): Promise<void> {
     await db.site.delete({ where: { id: page.siteId } }).catch(() => {});
   }
 
-  revalidatePath("/account");
+  revalidatePath("/settings");
 }
 
 export async function togglePage(formData: FormData): Promise<void> {
@@ -110,9 +110,6 @@ export async function togglePage(formData: FormData): Promise<void> {
   if (!page) return;
 
   await db.page.update({ where: { id: page.id }, data: { enabled: !page.enabled } });
-  revalidatePath("/account");
+  revalidatePath("/settings");
 }
 
-export async function signOutAction() {
-  await signOut({ redirectTo: "/" });
-}

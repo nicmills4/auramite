@@ -12,7 +12,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const session = await auth();
-  if (session?.user) redirect("/account");
+  if (session?.user) redirect("/dashboard");
 
   const { error } = await searchParams;
 
@@ -20,7 +20,7 @@ export default async function LoginPage({
     "use server";
     const email = String(formData.get("email") || "").trim();
     if (!email) return;
-    await signIn("resend", { email, redirectTo: "/account" });
+    await signIn("resend", { email, redirectTo: "/dashboard" });
   }
 
   return (
