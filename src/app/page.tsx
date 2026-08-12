@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type LogLine = { text: string; danger?: boolean; ok?: boolean };
 type Explainer = { key: string; severity: "HIGH" | "MEDIUM"; title: string; paragraph: string; logLines: LogLine[]; rule: string };
@@ -41,6 +41,17 @@ const TIERS = [
   { name: "Growth", price: "$299", per: "/mo", tag: "Multi-site & faster", hot: false, feats: ["Up to 5 sites", "Daily scans + GPC checks", "Consent-mode setup guidance", "Priority support"] },
 ];
 
+// Indicative pacing for the wait UI — these are the scanner's real phases in
+// order, on an estimated clock (the API returns one response, not progress events).
+const SCAN_BUDGET = 30;
+const SCAN_STAGES: [number, string][] = [
+  [0, "Opening your homepage in a clean browser"],
+  [4, "Recording every network request"],
+  [9, "Waiting for your consent banner to appear"],
+  [16, "Classifying trackers and their vendors"],
+  [23, "Checking Global Privacy Control signals"],
+];
+
 const Check = () => (
   <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden>
     <path d="M4 10.5l4 4 8-9" stroke="#e3b341" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -56,6 +67,39 @@ export default function Home() {
   const [consultEmail, setConsultEmail] = useState("");
   const [consultSent, setConsultSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Drives the countdown and stage list while a scan is in flight.
+  useEffect(() => {
+    if (!loading) return;
+    setElapsed(0);
+    const startedAt = Date.now();
+    const id = setInterval(() => setElapsed(Date.now() - startedAt), 100);
+    return () => clearInterval(id);
+  }, [loading]);
+
+  // Reveal [data-reveal] blocks as they scroll in. Re-runs when results swap the
+  // page content out, so freshly mounted nodes get observed too.
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-visible)");
+    if (!els.length) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      els.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("is-visible");
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.05 },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [result]);
 
   async function runScan(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +135,12 @@ export default function Home() {
   const leaked = result && result.highCount > 0;
   const sevChip = (s: string) => s === "HIGH" ? "bg-red-500/15 text-red-300" : "bg-amber-500/15 text-amber-300";
 
+  const secs = elapsed / 1000;
+  const remaining = Math.max(0, SCAN_BUDGET - Math.floor(secs));
+  const overtime = secs >= SCAN_BUDGET;
+  const stageIdx = SCAN_STAGES.reduce((acc, [at], i) => (secs >= at ? i : acc), 0);
+  const RING = 2 * Math.PI * 34;
+
   return (
     <main className="flex-1 text-zinc-300">
       {/* ---------- nav ---------- */}
@@ -112,25 +162,22 @@ export default function Home() {
       </nav>
 
       {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden border-b border-white/[0.08]">
-        <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.14), transparent)" }} />
-        <div aria-hidden className="pointer-events-none select-none absolute inset-0 flex items-center justify-center">
-          <span className="font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1, backgroundImage: "linear-gradient(90deg, rgba(242,202,99,0) 0%, rgba(242,202,99,0.05) 28%, rgba(242,202,99,0.24) 50%, rgba(242,202,99,0.05) 72%, rgba(242,202,99,0) 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" }}>AURAMITE</span>
+      <section className="relative overflow-hidden">
+        <div aria-hidden className="fade-in pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.14), transparent)" }} />
+        <div aria-hidden className="fade-in pointer-events-none select-none absolute inset-0 flex items-center justify-center" style={{ animationDelay: "160ms" }}>
+          <span className="watermark font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1 }}>AURAMITE</span>
         </div>
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 pt-20 pb-16 text-center">
-          <p className={`${eyebrow} mb-6`} style={{ color: gold }}>Pre-consent defense &amp; monitoring</p>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05] mb-2" style={{ fontFamily: "var(--font-display)", color: gold }}>Armor your site against consumer data leaks</h1>
-          <p className="text-xl sm:text-4xl font-bold tracking-tight leading-[1.15] text-white" style={{ fontFamily: "var(--font-display)" }}>
-            Enlist Auramite to watch your site like an eagle.
-          </p>
-          <p className="mt-5 text-[17px] leading-relaxed text-zinc-400 max-w-2xl mx-auto">
-            We load your site as a real visitor, catch every tracker that hands personal data to advertisers
-            <span className="text-zinc-100 font-medium"> before anyone consents</span>, and show you how to shut
-            it down — then stand watch so it stays shut.
+          <p className={`${eyebrow} fade-up mb-6`} style={{ color: gold }}>Pre-consent defense &amp; monitoring</p>
+          <h1 className="fade-up text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05]" style={{ fontFamily: "var(--font-display)", color: gold, animationDelay: "70ms" }}>Enlist Auramite to watch your site like an eagle.</h1>
+          <p className="fade-up mt-5 text-[17px] leading-relaxed text-zinc-400 max-w-2xl mx-auto" style={{ animationDelay: "140ms" }}>
+            <span className="text-zinc-100 font-medium">Armor your site against consumer data leaks.</span> We load
+            it as a real visitor, catch every tracker that hands personal data to advertisers before anyone
+            consents, and show you how to shut it down — then stand watch so it stays shut.
           </p>
 
-          <form id="scan" onSubmit={runScan} className="mt-9 flex flex-col sm:flex-row gap-2.5 max-w-xl mx-auto scroll-mt-24">
+          <form id="scan" onSubmit={runScan} className="fade-up mt-9 flex flex-col sm:flex-row gap-2.5 max-w-xl mx-auto scroll-mt-24" style={{ animationDelay: "210ms" }}>
             <input
               value={url} onChange={(e) => setUrl(e.target.value)}
               placeholder="yourcompany.com" inputMode="url"
@@ -144,7 +191,7 @@ export default function Home() {
               ) : "Scan my site"}
             </button>
           </form>
-          <p className="mt-3 text-xs text-zinc-600">No signup · results in ~20 seconds · plain-English findings, not legal advice</p>
+          <p className="fade-up mt-3 text-xs text-zinc-600" style={{ animationDelay: "280ms" }}>No signup · results in ~20 seconds · plain-English findings, not legal advice</p>
 
           {error && (
             <div className="mt-5 mx-auto max-w-xl rounded-lg border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
@@ -152,9 +199,56 @@ export default function Home() {
             </div>
           )}
           {loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
-              <span className="inline-block h-4 w-4 rounded-full border-2 border-zinc-700 border-t-[#e3b341] animate-spin" />
-              <span>Loading your homepage and watching what fires… ~15&ndash;20s.</span>
+            <div className={`${card} mt-6 mx-auto max-w-md p-6 text-left`} role="status" aria-live="polite">
+              <div className="flex items-center gap-5">
+                <div className="relative shrink-0">
+                  <svg viewBox="0 0 80 80" className="h-20 w-20 -rotate-90" aria-hidden>
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                    <circle
+                      cx="40" cy="40" r="34" fill="none" stroke={gold} strokeWidth="5" strokeLinecap="round"
+                      strokeDasharray={RING}
+                      strokeDashoffset={RING * (1 - Math.min(secs / SCAN_BUDGET, 1))}
+                      style={{ transition: "stroke-dashoffset 0.15s linear" }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {overtime ? (
+                      <span className="inline-block h-5 w-5 rounded-full border-2 border-zinc-700 border-t-[#e3b341] animate-spin" />
+                    ) : (
+                      <span className="text-2xl font-bold tabular-nums text-white" style={{ fontFamily: "var(--font-display)" }}>{remaining}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-white">{overtime ? "Almost there…" : "Scanning your site"}</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {overtime
+                      ? "This one is taking a little longer than usual. Hang tight — we won't drop it."
+                      : `About ${remaining} second${remaining === 1 ? "" : "s"} left.`}
+                  </p>
+                </div>
+              </div>
+
+              <ul className="mt-5 space-y-2 border-t border-white/[0.08] pt-4 text-sm">
+                {SCAN_STAGES.map(([, label], i) => {
+                  const done = i < stageIdx || overtime;
+                  const active = i === stageIdx && !overtime;
+                  return (
+                    <li key={label} className={`flex items-center gap-2.5 transition-colors ${done ? "text-zinc-500" : active ? "text-zinc-200" : "text-zinc-700"}`}>
+                      {done ? (
+                        <Check />
+                      ) : active ? (
+                        <span className="inline-block h-4 w-4 shrink-0 rounded-full border-2 border-zinc-700 border-t-[#e3b341] animate-spin" />
+                      ) : (
+                        <span className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">{label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="mt-4 text-xs text-zinc-600">Keep this tab open — your results appear here the moment we&apos;re done.</p>
             </div>
           )}
         </div>
@@ -182,15 +276,16 @@ export default function Home() {
 
               {result.firstShareMs != null && (
                 <div className={`${card} p-5`}>
+                  {/* Rows land in sequence so the order of events reads as a story. */}
                   <div className="grid grid-cols-[56px_1fr] gap-y-3 text-sm">
-                    <div className="font-medium text-zinc-500">0.00s</div>
-                    <div className="flex gap-2 text-zinc-200"><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />A visitor opens your homepage.</div>
-                    <div className="font-medium text-red-400">{fmtT(result.firstShareMs)}</div>
-                    <div className="flex gap-2 text-zinc-200"><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-red-500 shrink-0" /><span><b className="font-medium text-white">Data already sent to {result.hardShare.join(", ") || "advertisers"}.</b> No one was asked.</span></div>
+                    <div className="fade-up font-medium text-zinc-500">0.00s</div>
+                    <div className="fade-up flex gap-2 text-zinc-200"><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />A visitor opens your homepage.</div>
+                    <div className="fade-up font-medium text-red-400" style={{ animationDelay: "320ms" }}>{fmtT(result.firstShareMs)}</div>
+                    <div className="fade-up flex gap-2 text-zinc-200" style={{ animationDelay: "320ms" }}><span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-red-500 shrink-0" /><span><b className="font-medium text-white">Data already sent to {result.hardShare.join(", ") || "advertisers"}.</b> No one was asked.</span></div>
                     {result.bannerMs != null && (
                       <>
-                        <div className="font-medium text-zinc-500">{fmtT(result.bannerMs)}</div>
-                        <div className="flex gap-2 text-zinc-400"><span className="mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-500 shrink-0" />Your cookie banner appears — after the data already left.</div>
+                        <div className="fade-up font-medium text-zinc-500" style={{ animationDelay: "700ms" }}>{fmtT(result.bannerMs)}</div>
+                        <div className="fade-up flex gap-2 text-zinc-400" style={{ animationDelay: "700ms" }}><span className="mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-500 shrink-0" />Your cookie banner appears — after the data already left.</div>
                       </>
                     )}
                   </div>
@@ -301,12 +396,12 @@ export default function Home() {
         <>
           {/* ---------- evidence pairing ---------- */}
           <section className="mx-auto max-w-6xl px-6 py-20">
-            <div className="text-center mb-10">
+            <div data-reveal className="text-center mb-10">
               <p className={`${eyebrow} mb-3`} style={{ color: gold }}>What you get back</p>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>See the gap, then seal it.</h2>
             </div>
             <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] items-stretch">
-              <div className={`${card} overflow-hidden`}>
+              <div data-reveal style={{ transitionDelay: "80ms" }} className={`${card} overflow-hidden`}>
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.08] font-mono text-[11px] text-zinc-500">
                   <span className="h-2 w-2 rounded-full bg-red-500" />
                   Network · fired before the consent banner
@@ -319,7 +414,7 @@ export default function Home() {
                   <div className="text-zinc-600">— consent banner rendered at 7.21s —</div>
                 </pre>
               </div>
-              <div className={`${card} p-5 flex flex-col`}>
+              <div data-reveal style={{ transitionDelay: "180ms" }} className={`${card} p-5 flex flex-col`}>
                 <p className="font-mono text-[11px] text-zinc-500 mb-4">VERDICT</p>
                 <p className="text-3xl font-bold leading-none" style={{ fontFamily: "var(--font-display)", color: gold }}>3 trackers</p>
                 <p className="text-sm text-zinc-500 mt-1.5 mb-5">fired before anyone consented</p>
@@ -339,15 +434,15 @@ export default function Home() {
           </section>
 
           {/* ---------- bento ---------- */}
-          <section id="how" className="border-t border-white/[0.08] scroll-mt-16">
+          <section id="how" className="scroll-mt-16">
             <div className="mx-auto max-w-6xl px-6 py-20">
-              <div className="text-center mb-10">
+              <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>How it works</p>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Four layers of cover.</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                {BENTO.map((b) => (
-                  <div key={b.n} className={`${card} p-6 transition-colors hover:border-white/[0.16]`}>
+                {BENTO.map((b, i) => (
+                  <div key={b.n} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`${card} p-6 hover:border-white/[0.16]`}>
                     <p className="font-mono text-[11px] tracking-[0.15em] text-zinc-600">{b.n} · <span style={{ color: gold }}>{b.k.toUpperCase()}</span></p>
                     <h3 className="mt-3 text-lg font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>{b.h}</h3>
                     <p className="mt-2 text-[15px] leading-relaxed text-zinc-400">{b.p}</p>
@@ -358,15 +453,15 @@ export default function Home() {
           </section>
 
           {/* ---------- checks ---------- */}
-          <section id="checks" className="border-t border-white/[0.08] scroll-mt-16">
+          <section id="checks" className="scroll-mt-16">
             <div className="mx-auto max-w-6xl px-6 py-20">
-              <div className="text-center mb-10">
+              <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Coverage</p>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>What we stand guard against</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {CHECKS.map(([h, p]) => (
-                  <div key={h} className={`${card} p-5 transition-colors hover:border-white/[0.16]`}>
+                {CHECKS.map(([h, p], i) => (
+                  <div key={h} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={`${card} p-5 hover:border-white/[0.16]`}>
                     <h3 className="font-medium text-zinc-100">{h}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-500">{p}</p>
                   </div>
@@ -376,15 +471,15 @@ export default function Home() {
           </section>
 
           {/* ---------- pricing ---------- */}
-          <section id="pricing" className="border-t border-white/[0.08] scroll-mt-16">
+          <section id="pricing" className="scroll-mt-16">
             <div className="mx-auto max-w-6xl px-6 py-20">
-              <div className="text-center mb-10">
+              <div data-reveal className="text-center mb-10">
                 <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Pricing</p>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Simple pricing</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
-                {TIERS.map((t) => (
-                  <div key={t.name} className={`rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
+                {TIERS.map((t, i) => (
+                  <div key={t.name} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
                     <div className="flex items-baseline justify-between">
                       <h3 className="font-semibold text-white">{t.name}</h3>
                       {t.hot && <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: gold }}>Most popular</span>}
@@ -402,9 +497,9 @@ export default function Home() {
           </section>
 
           {/* ---------- CTA band ---------- */}
-          <section className="border-t border-white/[0.08]">
+          <section>
             <div className="mx-auto max-w-6xl px-6 py-20">
-              <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-14 text-center">
+              <div data-reveal className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-14 text-center">
                 <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.12), transparent)" }} />
                 <div className="relative">
                   <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Armor your site.</h2>
@@ -418,7 +513,7 @@ export default function Home() {
       )}
 
       {/* ---------- footer ---------- */}
-      <footer className="relative overflow-hidden border-t border-white/[0.08]">
+      <footer className="relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-6 pt-14 pb-4">
           <div className="relative z-10 flex flex-col sm:flex-row justify-between gap-10">
             <div className="max-w-[240px]">
@@ -445,7 +540,7 @@ export default function Home() {
           </div>
           <p className="relative z-10 mt-12 text-xs text-zinc-700">© {new Date().getFullYear()} Auramite</p>
           <div aria-hidden className="pointer-events-none select-none -mt-4 text-center">
-            <span className="font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "17vw", lineHeight: 1, backgroundImage: "linear-gradient(90deg, rgba(242,202,99,0) 0%, rgba(242,202,99,0.04) 30%, rgba(242,202,99,0.13) 50%, rgba(242,202,99,0.04) 70%, rgba(242,202,99,0) 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", WebkitTextFillColor: "transparent" }}>AURAMITE</span>
+            <span className="watermark watermark--dim font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "17vw", lineHeight: 1 }}>AURAMITE</span>
           </div>
         </div>
       </footer>

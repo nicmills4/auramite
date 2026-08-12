@@ -10,8 +10,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
 }
 
 body {
@@ -19,9 +19,139 @@ body {
     radial-gradient(1200px 600px at 50% -10%, rgba(227, 179, 65, 0.08), transparent 60%),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
 }
+
 
 ::selection {
   background: rgba(227, 179, 65, 0.3);
+}
+
+/* Hero entrance: each line rises and fades in, staggered via inline animation-delay. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.75s cubic-bezier(0.21, 0.6, 0.35, 1) both;
+}
+
+.fade-in {
+  animation: fade-in 1.4s ease-out both;
+}
+
+/* Scroll reveal: hidden until the observer marks it visible. The <noscript>
+   override in layout.tsx keeps everything visible when JS never runs. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  /* border-color rides along so cards can still animate their hover state —
+     a Tailwind transition-* utility here would replace this whole shorthand. */
+  transition:
+    opacity 0.7s cubic-bezier(0.21, 0.6, 0.35, 1),
+    transform 0.7s cubic-bezier(0.21, 0.6, 0.35, 1),
+    border-color 0.2s ease;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Giant AURAMITE wordmark: a static centered glow with a highlight travelling
+   across it. Layer 1 is the moving shine, layer 2 the fixed base gradient. */
+.watermark {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(242, 202, 99, 0) 0%,
+      rgba(242, 202, 99, 0.09) 45%,
+      rgba(242, 202, 99, 0.16) 50%,
+      rgba(242, 202, 99, 0.09) 55%,
+      rgba(242, 202, 99, 0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(242, 202, 99, 0) 0%,
+      rgba(242, 202, 99, 0.05) 28%,
+      rgba(242, 202, 99, 0.24) 50%,
+      rgba(242, 202, 99, 0.05) 72%,
+      rgba(242, 202, 99, 0) 100%
+    );
+  background-size:
+    200% 100%,
+    100% 100%;
+  background-repeat: repeat, no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: watermark-shimmer 9s linear infinite;
+}
+
+/* Footer wordmark sits further back. */
+.watermark--dim {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(242, 202, 99, 0) 0%,
+      rgba(242, 202, 99, 0.05) 45%,
+      rgba(242, 202, 99, 0.09) 50%,
+      rgba(242, 202, 99, 0.05) 55%,
+      rgba(242, 202, 99, 0) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(242, 202, 99, 0) 0%,
+      rgba(242, 202, 99, 0.04) 30%,
+      rgba(242, 202, 99, 0.13) 50%,
+      rgba(242, 202, 99, 0.04) 70%,
+      rgba(242, 202, 99, 0) 100%
+    );
+}
+
+/* Shifts the shine layer by exactly one tile, so the loop is seamless. Both
+   endpoints stay percentages — a 0 endpoint serializes to 0px and would make
+   the browser interpolate a length against a percentage. */
+@keyframes watermark-shimmer {
+  from {
+    background-position:
+      100% 0,
+      50% 0;
+  }
+  to {
+    background-position:
+      -100% 0,
+      50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .fade-in,
+  .watermark {
+    animation: none;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
