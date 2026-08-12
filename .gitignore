@@ -50,3 +50,8 @@ next-env.d.ts
 
 # outreach kit contains real contact PII — never commit
 /outreach-sheet.md
+
+/src/generated/prisma
+
+# Prisma generated client (regenerated on install via postinstall)
+/src/generated

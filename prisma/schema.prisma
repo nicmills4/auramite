@@ -1,0 +1,197 @@
+// Auramite data model.
+//
+// Shape: a User signs in by magic link and belongs to one Organization, which
+// carries the Stripe subscription. Sites hang off the Organization; Pages hang
+// off Sites and are the actual scan targets. Scan rows persist each run's
+// findings AND its signal snapshot — that snapshot is what the "new leak since
+// last time" diff compares against, so it must live here rather than in local
+// JSON files, or the diff resets every time compute is recycled.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- auth (Auth.js)
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------- billing
+
+enum Plan {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum SubStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum Cadence {
+  DAILY
+  WEEKLY
+}
+
+model Organization {
+  id   String  @id @default(cuid())
+  name String?
+
+  stripeCustomerId String? @unique
+
+  users        User[]
+  sites        Site[]
+  subscription Subscription?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  orgId String       @unique
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  stripeSubscriptionId String    @unique
+  stripePriceId        String?
+  plan                 Plan
+  status               SubStatus
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------- scan targets
+
+model Site {
+  id   String @id @default(cuid())
+  host String // registrable host, normalised — "example.com"
+
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  pages Page[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, host])
+  @@index([orgId])
+}
+
+model Page {
+  id    String  @id @default(cuid())
+  url   String
+  label String? // "Checkout", "Pricing" — for the report
+
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  scans Scan[]
+
+  // Denormalised from the plan so the runner can select due pages in one query
+  // instead of joining through Site → Org → Subscription for every candidate.
+  cadence    Cadence   @default(WEEKLY)
+  lastScanAt DateTime?
+  enabled    Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([siteId, url])
+  @@index([enabled, lastScanAt])
+}
+
+model Scan {
+  id String @id @default(cuid())
+
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  ranAt   DateTime @default(now())
+  ok      Boolean  @default(true)
+  error   String?
+  verdict String?
+
+  highCount    Int @default(0)
+  findingCount Int @default(0)
+
+  bannerMs     Int?
+  firstShareMs Int?
+
+  // Full explainer payload for the report, and the signal set the next run diffs
+  // against to decide what is genuinely NEW rather than merely still-present.
+  findings Json?
+  signals  Json?
+
+  @@index([pageId, ranAt])
+}
