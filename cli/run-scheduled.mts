@@ -214,3 +214,9 @@ withNew.forEach((r) => console.log(`  NEW  ${r.label || r.url}: +${r.diff!.added
 if (process.env.DRY_RUN === "1") console.log("DRY RUN — emails written to data/outbox/, nothing sent.");
 
 await db.$disconnect();
+
+// Exit explicitly. A cron container that never terminates is treated as still
+// running, and the next scheduled run is skipped — so a single lingering
+// Playwright handle would silently stop all monitoring. A page that failed to
+// load is a normal outcome, not a failed run, so this stays 0 regardless.
+process.exit(0);
