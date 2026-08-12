@@ -154,6 +154,54 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const openHigh = liveLatest.reduce((n, l) => n + (l!.ok ? l!.highCount : 0), 0);
   const everScanned = [...latestOf.values()].some(Boolean);
 
+  // Current standing, from each enabled page's most recent scan — deliberately
+  // independent of the selected range, since "am I leaking right now" should
+  // not change because someone narrowed the date filter.
+  const unreachable = liveLatest.filter((l) => !l!.ok).length;
+  const pagesWithHigh = liveLatest.filter((l) => l!.ok && l!.highCount > 0).length;
+  const pagesWithFindings = liveLatest.filter((l) => l!.ok && l!.highCount === 0 && (l!.verdict ?? "").startsWith("POSSIBLE")).length;
+  const unscanned = enabledPages.length - liveLatest.length;
+
+  const status = !enabledPages.length || (!liveLatest.length && !everScanned)
+    ? {
+        tone: "none" as const,
+        cls: "border-white/[0.08] bg-white/[0.02]",
+        dot: "bg-zinc-500",
+        text: "text-zinc-300",
+        title: "Not scanned yet",
+        detail: enabledPages.length ? "Your first scheduled run will set your status." : "Add pages in settings to start monitoring.",
+      }
+    : pagesWithHigh > 0
+      ? {
+          tone: "red" as const,
+          cls: "border-red-500/30 bg-red-500/[0.07]",
+          dot: "bg-red-500",
+          text: "text-red-200",
+          title: "Action needed",
+          detail: `${openHigh} high-severity finding${openHigh === 1 ? "" : "s"} across ${pagesWithHigh} page${pagesWithHigh === 1 ? "" : "s"} — data is leaving before consent.`,
+        }
+      : pagesWithFindings > 0 || unreachable > 0 || unscanned > 0
+        ? {
+            tone: "amber" as const,
+            cls: "border-amber-500/30 bg-amber-500/[0.07]",
+            dot: "bg-amber-400",
+            text: "text-amber-200",
+            title: "Worth a look",
+            detail: [
+              pagesWithFindings > 0 && `${pagesWithFindings} page${pagesWithFindings === 1 ? "" : "s"} with lower-severity gaps`,
+              unreachable > 0 && `${unreachable} page${unreachable === 1 ? "" : "s"} we couldn't reach`,
+              unscanned > 0 && `${unscanned} page${unscanned === 1 ? "" : "s"} not scanned yet`,
+            ].filter(Boolean).join(" · "),
+          }
+        : {
+            tone: "green" as const,
+            cls: "border-emerald-500/30 bg-emerald-500/[0.07]",
+            dot: "bg-emerald-500",
+            text: "text-emerald-200",
+            title: "All clear",
+            detail: `No trackers firing before consent on ${enabledPages.length} monitored page${enabledPages.length === 1 ? "" : "s"}.`,
+          };
+
   const qs = (over: Partial<Query>) => {
     const p = new URLSearchParams();
     const merged: Query = { range: q.range, from: q.from, to: q.to, sort: q.sort, page: q.page, ...over };
@@ -221,6 +269,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <a href="/dashboard" className="text-xs text-zinc-500 transition hover:text-zinc-300">Clear</a>
         )}
       </form>
+
+      {/* Current standing, before any of the range-dependent numbers. */}
+      <div className={`rounded-2xl border p-5 ${status.cls}`} role="status">
+        <div className="flex items-center gap-3">
+          <span className={`h-3 w-3 shrink-0 rounded-full ${status.dot}`} aria-hidden />
+          <div className="min-w-0">
+            <p className={`font-semibold ${status.text}`}>{status.title}</p>
+            <p className="mt-0.5 text-sm text-zinc-400">{status.detail}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

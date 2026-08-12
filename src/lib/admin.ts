@@ -15,6 +15,17 @@ function allowlist(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Whether an address would grant admin if someone signed in with it. Used to
+ * keep the admin panel from creating or destroying accounts tied to an admin
+ * identity — sign-in itself is already safe, since the magic link only ever
+ * goes to the real inbox.
+ */
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return allowlist().includes(email.trim().toLowerCase());
+}
+
 export async function isAdmin(): Promise<boolean> {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
