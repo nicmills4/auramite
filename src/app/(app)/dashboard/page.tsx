@@ -47,7 +47,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const customTo = parseDay(q.to, true);
   const preset = RANGES.find((r) => r.key === q.range) ?? RANGES[1];
   const usingCustom = Boolean(customFrom || customTo);
-  const from = usingCustom ? customFrom : preset.days ? new Date(Date.now() - preset.days * DAY_MS) : null;
+  // Reading the clock is impure, but a relative range has no other definition,
+  // and this page is force-dynamic — it is rendered per request by design.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const from = usingCustom ? customFrom : preset.days ? new Date(now - preset.days * DAY_MS) : null;
   const to = usingCustom ? customTo : null;
 
   const pages = await db.page.findMany({
