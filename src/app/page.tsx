@@ -253,6 +253,9 @@ export default function Home() {
             <a href="#checks" className="hidden sm:inline hover:text-zinc-200 transition-colors">What we check</a>
             <a href="#pricing" className="hidden sm:inline hover:text-zinc-200 transition-colors">Pricing</a>
             <a href="#top" className="hover:text-zinc-200 transition-colors">Scan</a>
+            {/* /login redirects an already-signed-in visitor straight to /account,
+                so one link serves both states without session state up here. */}
+            <a href="/login" className="text-zinc-300 hover:text-white transition-colors">Sign in</a>
           </div>
         </div>
       </nav>
@@ -727,6 +730,7 @@ export default function Home() {
                 <a href="#scan" className="text-zinc-400 hover:text-white transition-colors">Free scan</a>
                 <a href="#how" className="text-zinc-400 hover:text-white transition-colors">How it works</a>
                 <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors">Pricing</a>
+                <a href="/login" className="text-zinc-400 hover:text-white transition-colors">Sign in</a>
               </div>
               <div className="flex flex-col gap-2.5">
                 <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-600">Company</span>
