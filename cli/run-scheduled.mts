@@ -82,19 +82,15 @@ const byOrg = await reportByOrg(results, (orgId) => recipientsForOrg(candidates,
 
 const operator = process.env.OPERATOR_EMAIL;
 if (operator) {
-  await sendSummary({
-    to: operator,
-    ranAt,
-    results: results.map((r) => ({
-      host: r.label || r.url,
-      error: r.error,
-      verdict: r.verdict,
-      firstRun: r.firstRun,
-      added: r.diff?.added,
-      band: r.error ? "—" : r.diff?.added.length ? "NEW" : "ok",
-      score: "",
-    })),
-  });
+  // sendSummary consumes raw PageResults and does its own presentation.
+  // Guarded: by this point customers have their reports, and a summary bug
+  // must not crash the container into a state where the cron marks the run
+  // as still in progress and skips the next one.
+  try {
+    await sendSummary({ to: operator, ranAt, results });
+  } catch (e) {
+    console.error("operator summary failed (customer reports already sent):", e);
+  }
 }
 
 const withNew = results.filter((r) => !r.error && !r.firstRun && r.diff?.added.length);

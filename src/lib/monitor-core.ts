@@ -22,6 +22,8 @@ export type PageResult = {
   label: string | null;
   host: string;
   verdict?: string;
+  /** Plain-English findings for the report — the emails never show raw verdicts. */
+  findings?: { severity: string; title: string }[];
   firstRun?: boolean;
   diff?: { added: string[]; resolved: string[] };
   error?: string;
@@ -133,7 +135,11 @@ export async function scanAndRecord(browser: Browser, page: DuePage): Promise<Pa
       // Proof pages are a convenience; a read-only filesystem must not fail the scan.
     }
 
-    return { orgId, url: page.url, label: page.label, host, verdict: scan.verdict as string, firstRun, diff };
+    const summarized = (explainers as { severity: string; title: string }[]).map((e) => ({
+      severity: e.severity,
+      title: e.title,
+    }));
+    return { orgId, url: page.url, label: page.label, host, verdict: scan.verdict as string, findings: summarized, firstRun, diff };
   } catch (e) {
     const error = cleanError(e);
     await db.scan.create({ data: { pageId: page.id, ok: false, error, verdict: null } }).catch(() => {});
