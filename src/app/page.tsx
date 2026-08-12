@@ -157,7 +157,7 @@ export default function Home() {
                 {result.verifySearch && (
                   <div className="mt-2 flex items-stretch gap-2">
                     <code className="flex-1 break-all rounded bg-black/40 border border-white/10 px-2.5 py-2 text-xs font-mono" style={{ color: gold }}>{result.verifySearch}</code>
-                    <button onClick={copyVerify} className="shrink-0 rounded bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied ✓" : "Copy"}</button>
+                    <button onClick={copyVerify} className="shrink-0 rounded bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied!" : "Copy"}</button>
                   </div>
                 )}
                 <p className="mt-2 text-xs text-zinc-500">That exact request fires <b className="text-zinc-400">before</b> your consent banner. Or check <span className="font-mono" style={{ color: gold }}>blacklight.themarkup.org</span>.</p>
@@ -228,7 +228,7 @@ export default function Home() {
             <button onClick={() => setShowConsult(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg">✕</button>
             {consultSent ? (
               <div className="text-center py-4">
-                <p className="text-white font-semibold text-lg">Request received ✅</p>
+                <p className="text-white font-semibold text-lg">Request received</p>
                 <p className="text-zinc-400 mt-2 text-sm">We&apos;ll email you shortly to lock in a 15-minute consultation and walk you through every finding on {result?.host}.</p>
               </div>
             ) : (
@@ -300,7 +300,7 @@ export default function Home() {
                     <p className="mt-3 text-3xl font-bold text-white">{t.price}<span className="text-base font-normal text-zinc-500">{t.per}</span></p>
                     <p className="text-sm text-zinc-500">{t.tag}</p>
                     <ul className="mt-4 space-y-2 text-sm text-zinc-300">
-                      {t.feats.map((f) => <li key={f} className="flex gap-2"><span style={{ color: gold }}>✓</span>{f}</li>)}
+                      {t.feats.map((f) => <li key={f} className="flex gap-2"><svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden><path d="M4 10.5l4 4 8-9" stroke="#e3b341" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg><span>{f}</span></li>)}
                     </ul>
                   </div>
                 ))}
