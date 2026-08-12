@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { planFor } from "@/lib/plans";
+import { isEmail } from "@/lib/email";
+
+/** Beyond a handful, a recipient list is a mailing list — that is a different feature. */
+const RECIPIENT_CAP = 5;
 
 /** Feedback surfaced inline by the add-page form via useActionState. */
 export type AddState = { error?: string; added?: string } | null;
@@ -113,3 +117,49 @@ export async function togglePage(formData: FormData): Promise<void> {
   revalidatePath("/settings");
 }
 
+
+export async function addRecipient(_prev: AddState, formData: FormData): Promise<AddState> {
+  let org;
+  try {
+    org = await requireOrg();
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  // Lowercased on the way in: the unique index is on the raw column, so
+  // Ops@x.com and ops@x.com would otherwise both be stored.
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  if (!email) return { error: "Enter an email address." };
+  if (!isEmail(email)) return { error: "That doesn't look like a valid email address." };
+
+  const count = await db.reportRecipient.count({ where: { orgId: org.id } });
+  if (count >= RECIPIENT_CAP) {
+    return { error: `Up to ${RECIPIENT_CAP} recipients. Remove one to add another.` };
+  }
+
+  try {
+    await db.reportRecipient.create({ data: { orgId: org.id, email } });
+  } catch {
+    return { error: "That address is already on the list." };
+  }
+
+  revalidatePath("/settings");
+  return { added: email };
+}
+
+export async function removeRecipient(formData: FormData): Promise<void> {
+  const org = await requireOrg();
+  const id = String(formData.get("recipientId") || "");
+
+  // Scoped through the org, so a forged id cannot touch another tenant's row.
+  const row = await db.reportRecipient.findFirst({ where: { id, orgId: org.id } });
+  if (!row) return;
+
+  // Never leave zero: with no rows the monitor silently falls back to members'
+  // login addresses, so an empty list would show a customer something untrue.
+  const count = await db.reportRecipient.count({ where: { orgId: org.id } });
+  if (count <= 1) return;
+
+  await db.reportRecipient.delete({ where: { id: row.id } });
+  revalidatePath("/settings");
+}

@@ -3,13 +3,17 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { PLANS, planFor } from "@/lib/plans";
-import { removePage, togglePage } from "./actions";
+import { removePage, togglePage, removeRecipient } from "./actions";
 import { AddPageForm } from "./add-page-form";
+import { RecipientForm } from "./recipient-form";
 import { CheckoutButton, PortalButton } from "./billing-buttons";
 import { gold, card, eyebrow, fmtDate } from "../ui";
 
 export const metadata: Metadata = { title: "Settings — Auramite" };
 export const dynamic = "force-dynamic";
+
+// Mirrors RECIPIENT_CAP in ./actions.ts.
+const RECIPIENT_CAP = 5;
 
 const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   ACTIVE: { text: "Active", cls: "bg-emerald-500/15 text-emerald-300" },
@@ -36,6 +40,7 @@ export default async function SettingsPage({
         include: {
           subscription: true,
           sites: { include: { pages: { orderBy: { createdAt: "asc" } } }, orderBy: { host: "asc" } },
+          reportRecipients: { orderBy: { createdAt: "asc" } },
         },
       },
     },
@@ -48,6 +53,7 @@ export default async function SettingsPage({
   const pageLimit = spec?.pageLimit ?? 1;
   const pages = user.org.sites.flatMap((s) => s.pages.map((p) => ({ ...p, host: s.host })));
   const atLimit = pages.length >= pageLimit;
+  const recipients = user.org.reportRecipients;
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-6 py-12">
@@ -129,6 +135,46 @@ export default async function SettingsPage({
               </div>
             </>
           )}
+        </section>
+
+        {/* ---- report recipients ---- */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className={eyebrow} style={{ color: gold }}>Report recipients</p>
+            <span className="font-mono text-xs text-zinc-500">{recipients.length} / {RECIPIENT_CAP}</span>
+          </div>
+
+          <div className={`${card} p-6`}>
+            <p className="mb-5 text-sm text-zinc-400">
+              Scan reports go to these addresses. They don&apos;t need an Auramite login — send them
+              to whoever fixes the site.
+            </p>
+
+            {recipients.length > 0 && (
+              <ul className="mb-5 divide-y divide-white/[0.06]">
+                {recipients.map((r) => (
+                  <li key={r.id} className="flex items-center gap-3 py-2.5">
+                    <span className="min-w-0 flex-1 truncate text-sm text-zinc-100">{r.email}</span>
+                    {recipients.length > 1 ? (
+                      <form action={removeRecipient}>
+                        <input type="hidden" name="recipientId" value={r.id} />
+                        <button type="submit" className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-red-500/40 hover:text-red-300">
+                          Remove
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="text-xs text-zinc-600">Last recipient</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <RecipientForm
+              atCap={recipients.length >= RECIPIENT_CAP}
+              capHint={`You've reached ${RECIPIENT_CAP} recipients. Remove one to add another.`}
+            />
+          </div>
         </section>
 
         {/* ---- pages under watch ---- */}
