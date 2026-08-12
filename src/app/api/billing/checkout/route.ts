@@ -51,10 +51,16 @@ export async function POST(req: Request) {
     const checkout = await stripe().checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
+      // payment_method_types is deliberately omitted so Stripe serves whichever
+      // methods are eligible per customer. Hardcoding it to ["card"] would lock
+      // out everything else and cost conversion.
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${BASE}/account?checkout=success`,
+      success_url: `${BASE}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE}/account?checkout=cancelled`,
       allow_promotion_codes: true,
+      // Labels the flow in the Stripe Dashboard so checkout funnels can be
+      // compared. Fixed, not per-request — a rotating value would not group.
+      integration_identifier: "auramite_subscription_kvtwzmrb",
       subscription_data: { metadata: { orgId: user.org.id } },
       // Mirrored on the session too: subscription.metadata is not present on the
       // completed-session event, and the webhook needs the org either way.
