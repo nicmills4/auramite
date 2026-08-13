@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { signalLabel } from "@/lib/signal-label";
 import { card, eyebrow, fmtDateTime, gold } from "../ui";
+import { TrendChart } from "./trend-chart";
 
 export const metadata: Metadata = { title: "Dashboard — Auramite" };
 export const dynamic = "force-dynamic";
@@ -97,7 +98,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         await db.scan.findFirst({
           where: { pageId, ranAt: { lt: boundary } },
           orderBy: { ranAt: "desc" },
-          select: { signals: true },
+          select: { signals: true, ok: true, highCount: true },
         }),
       ] as const),
     ),
@@ -297,6 +298,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
+      <TrendChart
+        scans={scans}
+        addedOf={(id) => meta.get(id)?.added.length ?? 0}
+        predecessorOf={predecessorOf}
+        from={from}
+        to={to}
+      />
+
       {pages.length === 0 ? (
         <div className={`${card} p-8 text-center`}>
           <p className="font-medium text-white">No pages under watch yet</p>
@@ -346,7 +355,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               const body = (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5">
                   <span className="w-[7.5rem] shrink-0 font-mono text-xs tabular-nums text-zinc-500">{fmtDateTime(s.ranAt)}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{page?.label || page?.url || "—"}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {page ? (
+                      // New window on purpose — the reader keeps their place in the history.
+                      <a
+                        href={`/pages/${page.id}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-zinc-200 underline decoration-white/20 underline-offset-4 transition hover:text-white hover:decoration-[#e3b341]"
+                      >
+                        {page.label || page.url}
+                      </a>
+                    ) : (
+                      <span className="text-zinc-200">—</span>
+                    )}
+                  </span>
                   {badge}
                   <span className="w-24 shrink-0 text-right text-xs text-zinc-500">
                     {s.ok ? `${s.findingCount} finding${s.findingCount === 1 ? "" : "s"}` : "failed"}
