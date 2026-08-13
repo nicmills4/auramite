@@ -70,13 +70,15 @@ export async function findDuePages(opts: { force?: boolean; orgId?: string } = {
           org: {
             include: {
               users: { select: { email: true } },
-              reportRecipients: { select: { email: true } },
+              reportRecipients: { select: { email: true, digest: true, lastSentAt: true } },
             },
           },
         },
       },
-      // Only the previous scan is needed — it holds the signals to diff against.
-      scans: { orderBy: { ranAt: "desc" }, take: 1 },
+      // The diff baseline is the last SUCCESSFUL scan. An unreachable day must
+      // not swallow a leak that appeared during the gap — failures are
+      // annotations, not resets.
+      scans: { where: { ok: true }, orderBy: { ranAt: "desc" }, take: 1 },
     },
   });
 
@@ -150,24 +152,42 @@ export async function scanAndRecord(browser: Browser, page: DuePage): Promise<Pa
 
 type Candidates = Awaited<ReturnType<typeof findDuePages>>["candidates"];
 
+const WEEKLY_WINDOW_MS = 6.5 * 24 * 3600e3; // a shade under 7 days so a weekly cron never skips
+
 /**
- * Who receives an org's report. Single source of truth so the CLI and the admin
- * panel cannot address different people for the same organization.
+ * Who receives an org's report this run. Single source of truth so the CLI and
+ * the admin panel cannot address different people for the same organization.
+ *
+ * Digest policy: EVERY_SCAN recipients always receive. WEEKLY recipients are
+ * quieted for no-change reports inside their window — but anything NEW always
+ * sends immediately; a digest setting must never delay an alert.
  */
-export function recipientsForOrg(candidates: Candidates, orgId: string): string[] {
+export function recipientsForOrg(candidates: Candidates, orgId: string, results?: PageResult[]): string[] {
   const org = candidates.find((p) => p.site.orgId === orgId)?.site.org;
-  // Configured recipients win. Falling back to members' login addresses is a
-  // safety net for an org the backfill somehow missed — a customer must never
-  // silently stop receiving the reports they pay for.
-  const configured = org?.reportRecipients.map((r) => r.email) ?? [];
-  const emails = configured.length ? configured : (org?.users.map((u) => u.email) ?? []);
-  return [...new Set(emails.map((e) => e.toLowerCase()))];
+  const rows = org?.reportRecipients ?? [];
+
+  // Fallback to members' login addresses is a safety net for an org the
+  // backfill somehow missed — a customer must never silently stop receiving
+  // the reports they pay for.
+  if (rows.length === 0) {
+    return [...new Set((org?.users.map((u) => u.email) ?? []).map((e) => e.toLowerCase()))];
+  }
+
+  const hasNews = (results ?? []).some((r) => !r.error && !r.firstRun && (r.diff?.added?.length ?? 0) > 0);
+  const now = Date.now();
+  const due = rows.filter((r) => {
+    if (r.digest !== "WEEKLY") return true;
+    if (hasNews) return true;
+    if (!r.lastSentAt) return true;
+    return now - r.lastSentAt.getTime() >= WEEKLY_WINDOW_MS;
+  });
+  return [...new Set(due.map((r) => r.email.toLowerCase()))];
 }
 
 /** One report per organization, covering every page scanned for it this run. */
 export async function reportByOrg(
   results: PageResult[],
-  recipientsFor: (orgId: string) => string[],
+  recipientsFor: (orgId: string, pages: PageResult[]) => string[],
   ranAt: string,
   redirectTo?: string,
 ) {
@@ -177,7 +197,16 @@ export async function reportByOrg(
     byOrg.get(r.orgId)!.push(r);
   }
   for (const [orgId, pages] of byOrg) {
-    await sendOrgReport({ to: recipientsFor(orgId), pages, ranAt, redirectTo });
+    const to = recipientsFor(orgId, pages);
+    if (!to.length) continue;
+    await sendOrgReport({ to, pages, ranAt, redirectTo });
+    // Stamp the weekly window only on real deliveries — a dry run or a
+    // redirected admin test must not consume a customer's digest window.
+    if (!redirectTo && process.env.DRY_RUN !== "1") {
+      await db.reportRecipient
+        .updateMany({ where: { orgId, email: { in: to } }, data: { lastSentAt: new Date() } })
+        .catch(() => {});
+    }
   }
   return byOrg;
 }

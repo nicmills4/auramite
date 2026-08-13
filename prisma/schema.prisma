@@ -138,6 +138,11 @@ model Subscription {
 /// because the person who signs in is often not the person who wants the
 /// reports — and a customer may want several. Emails are stored lowercased so
 /// the unique constraint actually prevents duplicates.
+enum Digest {
+  EVERY_SCAN
+  WEEKLY
+}
+
 model ReportRecipient {
   id String @id @default(cuid())
 
@@ -145,7 +150,11 @@ model ReportRecipient {
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   email     String
-  createdAt DateTime @default(now())
+  // WEEKLY recipients still get instant email when something NEW appears —
+  // the digest setting only quiets the no-change reports.
+  digest     Digest    @default(EVERY_SCAN)
+  lastSentAt DateTime?
+  createdAt  DateTime  @default(now())
 
   // Doubles as the orgId index — no separate @@index needed.
   @@unique([orgId, email])

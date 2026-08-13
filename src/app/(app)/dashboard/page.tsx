@@ -96,7 +96,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       [...earliestInRange.entries()].map(async ([pageId, boundary]) => [
         pageId,
         await db.scan.findFirst({
-          where: { pageId, ranAt: { lt: boundary } },
+          where: { pageId, ok: true, ranAt: { lt: boundary } },
           orderBy: { ranAt: "desc" },
           select: { signals: true, ok: true, highCount: true },
         }),
@@ -116,10 +116,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const predecessorOf = new Map(predecessors);
   const latestOf = new Map(latests);
 
-  // Diff semantics mirror monitor-core exactly, including its quirk: the
-  // comparison is against the preceding scan ROW even when that row failed, so
-  // a success after a failure reads as a fresh baseline. Anything else would
-  // contradict the emails customers already received.
+  // Diff semantics mirror monitor-core: the baseline is the last SUCCESSFUL
+  // scan. Failures are annotations — they never reset the walk, so a leak that
+  // appears during an unreachable gap is still reported as new.
   type Meta = { kind: "baseline" | "diff" | "error"; added: string[] };
   const meta = new Map<string, Meta>();
   const byPage = new Map<string, typeof scans>();
@@ -134,8 +133,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     for (const s of ascending) {
       if (!s.ok) {
         meta.set(s.id, { kind: "error", added: [] });
-        prev = null;
-        continue;
+        continue; // failures do not reset the baseline
       }
       const curr = Array.isArray(s.signals) ? (s.signals as string[]) : [];
       if (prev === null) {

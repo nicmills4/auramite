@@ -211,7 +211,7 @@ export async function runTestScan(_prev: AdminState, formData: FormData): Promis
     try {
       const results = [];
       for (const page of due) results.push(await scanAndRecord(browser, page));
-      await reportByOrg(results, (id) => recipientsForOrg(candidates, id), new Date().toISOString(), inbox);
+      await reportByOrg(results, (id, pages) => recipientsForOrg(candidates, id, pages), new Date().toISOString(), inbox);
     } catch (e) {
       console.error("admin test scan failed", e);
     } finally {

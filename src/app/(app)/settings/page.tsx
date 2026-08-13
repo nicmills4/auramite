@@ -6,6 +6,7 @@ import { PLANS, planFor } from "@/lib/plans";
 import { removePage, togglePage, removeRecipient } from "./actions";
 import { AddPageForm } from "./add-page-form";
 import { RecipientForm } from "./recipient-form";
+import { DigestSelect } from "./digest-select";
 import { PasswordForm } from "./password-form";
 import { CheckoutButton, PortalButton } from "./billing-buttons";
 import { gold, card, eyebrow, fmtDate } from "../ui";
@@ -163,7 +164,8 @@ export default async function SettingsPage({
           <div className={`${card} p-6`}>
             <p className="mb-5 text-sm text-zinc-400">
               Scan reports go to these addresses. They don&apos;t need an Auramite login — send them
-              to whoever fixes the site.
+              to whoever fixes the site. Weekly recipients still get an instant alert the moment
+              something new appears.
             </p>
 
             {recipients.length > 0 && (
@@ -171,6 +173,7 @@ export default async function SettingsPage({
                 {recipients.map((r) => (
                   <li key={r.id} className="flex items-center gap-3 py-2.5">
                     <span className="min-w-0 flex-1 truncate text-sm text-zinc-100">{r.email}</span>
+                    <DigestSelect recipientId={r.id} value={r.digest} />
                     {recipients.length > 1 ? (
                       <form action={removeRecipient}>
                         <input type="hidden" name="recipientId" value={r.id} />

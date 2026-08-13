@@ -41,9 +41,26 @@ from the same repo, with a different start command.
    | `REPORT_FROM_EMAIL` | `Auramite <reports@auramite.io>` |
    | `OPERATOR_EMAIL` | where the run summary goes |
    | `NEXT_PUBLIC_BASE_URL` | `https://auramite.io` — the "manage your monitoring" link in customer reports. Unset, it falls back to the production URL, which is silently wrong on staging. |
+   | `HEALTHCHECK_URL` | optional — a [healthchecks.io](https://healthchecks.io) (or similar) ping URL. The runner POSTs it when a run completes and POSTs `<url>/fail` when a run crashes. |
+   | `SCAN_RETENTION_DAYS` | optional — prune scan rows older than this after each run (default 365). Each page's newest scan always survives, so a paused page never loses its baseline. |
 
    Without `OPERATOR_EMAIL` customers still get their reports, but you get no
    summary — so a run that scanned nothing looks identical to a healthy one.
+
+## Knowing when the cron stops running
+
+A cron that silently stops is worse than one that crashes loudly — Railway skips
+overlapping runs, so one wedged container ends all monitoring with no error
+anywhere. `HEALTHCHECK_URL` closes that hole with a dead-man switch:
+
+1. Create a check at healthchecks.io with a period of 1 day and a grace window
+   of a few hours.
+2. Put its ping URL in the monitor service's `HEALTHCHECK_URL`.
+3. The service alerts you when a day passes without a ping — covering crashes,
+   wedged containers, a disabled schedule, and the repo quietly failing to build.
+
+The runner also distinguishes crash from silence: an unhandled error POSTs
+`<url>/fail` (an immediate alert) and exits 1.
 
 ## Things worth knowing
 
@@ -69,6 +86,13 @@ seconds per page.
 **Both services rebuild on every push**, since they share a repo. Harmless, just
 noisy — the monitor image is the same one the web app uses, which is why it
 already has Chromium.
+
+**Weekly digests never delay bad news.** Each report recipient has a digest
+setting (Settings → Report recipients). `WEEKLY` recipients skip no-change
+reports until ~6.5 days have passed since their last one — but any run that
+finds something NEW emails everyone immediately, whatever their setting. The
+window is stamped only on real deliveries: dry runs and admin test sends do not
+consume it.
 
 **Rehearse before the first real send.** `--dry-run` performs real scans and
 writes the exact emails to `data/outbox/` without sending them. Read one before

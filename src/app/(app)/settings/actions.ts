@@ -147,6 +147,20 @@ export async function addRecipient(_prev: AddState, formData: FormData): Promise
   return { added: email };
 }
 
+export async function setRecipientDigest(formData: FormData): Promise<void> {
+  const org = await requireOrg();
+  const id = String(formData.get("recipientId") || "");
+  const digest = String(formData.get("digest") || "");
+  if (digest !== "EVERY_SCAN" && digest !== "WEEKLY") return;
+
+  // Tenant-scoped like every mutation here: forged ids no-op.
+  const row = await db.reportRecipient.findFirst({ where: { id, orgId: org.id } });
+  if (!row) return;
+
+  await db.reportRecipient.update({ where: { id: row.id }, data: { digest } });
+  revalidatePath("/settings");
+}
+
 export async function removeRecipient(formData: FormData): Promise<void> {
   const org = await requireOrg();
   const id = String(formData.get("recipientId") || "");

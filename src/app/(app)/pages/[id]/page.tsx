@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { signalLabel } from "@/lib/signal-label";
 import { card, eyebrow, fmtDateTime, gold } from "../../ui";
 import { CopyButton } from "./copy-button";
+import { RescanButton } from "./rescan-button";
 
 export const metadata: Metadata = { title: "Page detail — Auramite" };
 export const dynamic = "force-dynamic";
@@ -72,8 +73,8 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
           ? { label: "Possible gaps", cls: "bg-amber-500/15 text-amber-300" }
           : { label: "No leaks", cls: "bg-emerald-500/15 text-emerald-300" };
 
-  // Same diff semantics as the dashboard and the emails: previous row even if
-  // failed, missing signals → baseline.
+  // Same diff semantics as the dashboard and the emails: the baseline is the
+  // last SUCCESSFUL scan; failures are annotations and never reset the walk.
   type Meta = { kind: "baseline" | "diff" | "error"; added: string[]; resolved: string[] };
   const meta = new Map<string, Meta>();
   {
@@ -82,8 +83,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
     for (const s of asc) {
       if (!s.ok) {
         meta.set(s.id, { kind: "error", added: [], resolved: [] });
-        prev = null;
-        continue;
+        continue; // failures do not reset the baseline
       }
       const curr = Array.isArray(s.signals) ? (s.signals as string[]) : [];
       if (prev === null) meta.set(s.id, { kind: "baseline", added: [], resolved: [] });
@@ -115,6 +115,17 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
           {page.cadence === "DAILY" ? "Daily" : "Weekly"} scans · {page.enabled ? "monitoring on" : "paused"} ·
           last scanned {latest ? fmtDateTime(latest.ranAt) : "never"}
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {page.enabled && <RescanButton pageId={page.id} />}
+          {latestOk && (
+            <a
+              href={`/pages/${page.id}/report`}
+              className="rounded-lg border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.12]"
+            >
+              Printable report
+            </a>
+          )}
+        </div>
       </div>
 
       {/* ---- current findings, with the evidence ---- */}
