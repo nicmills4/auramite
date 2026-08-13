@@ -42,7 +42,12 @@ try {
 const inlineHits = INLINE_SIGS.filter((s) => s.re.test(servedHtml)).map((s) => s.name);
 
 // --- 2. dynamic scan (what actually fires) — reuse the engine ---
-const scan = await scanOne(browser, url, { sendGPC: true, writeReports: false });
+const scan = await scanOne(browser, url, { sendGPC: true, writeReports: false, respectRobots: true });
+ if (scan.skipped) {
+  console.error(`Skipped ${url} — ${scan.skippedReason}.`);
+  await browser.close();
+  process.exit(2);
+}
 
 // --- 3. broad legal-link capture (ground-truth the false positives) ---
 const page = await browser.newPage();

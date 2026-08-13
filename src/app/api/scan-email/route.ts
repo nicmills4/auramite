@@ -123,11 +123,19 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { email?: string; url?: string };
+  let body: { email?: string; url?: string; authorized?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Bad request." }, { status: 400 });
+  }
+
+  // Same attestation gate as /api/scan — see the note there.
+  if (body?.authorized !== true) {
+    return NextResponse.json(
+      { ok: false, error: "Confirm you own this site or are authorized to scan it." },
+      { status: 400 },
+    );
   }
 
   const email = (body?.email || "").toString().trim();

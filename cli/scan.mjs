@@ -23,7 +23,13 @@ const browser = await chromium.launch({ headless: true });
 const summary = [];
 for (const url of urls) {
   try {
-    const r = await scanOne(browser, url, { sendGPC });
+    const r = await scanOne(browser, url, { sendGPC, respectRobots: true });
+    if (r.skipped) {
+      console.log(`
+– ${url} — skipped: ${r.skippedReason}`);
+      summary.push({ url, verdict: 'SKIPPED (robots.txt)' });
+      continue;
+    }
     renderConsole(r);
     summary.push({ url, verdict: r.verdict, cmps: r.cmps.map((c) => c.name) });
   } catch (e) {

@@ -132,7 +132,11 @@ export default async function PrintableReport({ params }: { params: Promise<{ id
             scan of {page.url} {scan ? `on ${fmt(scan.ranAt)}` : ""}
           </p>
           <p className="mt-1">
-            This report reflects automated observations of network activity before consent interaction. It is not legal advice.
+            This report records what one automated page load observed — which requests the page made, and when.
+            Auramite is not a law firm; this is not legal advice and not a certification of compliance. Whether
+            any observation amounts to a violation depends on facts not assessed here and is a judgement for
+            counsel. A single automated load can miss controls inside a consent dialog, policies published as
+            PDFs or on another domain, and content rendered only after interaction.
           </p>
         </footer>
       </div>

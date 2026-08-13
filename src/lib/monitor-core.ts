@@ -102,6 +102,10 @@ export async function scanAndRecord(browser: Browser, page: DuePage): Promise<Pa
   const orgId = page.site.orgId;
 
   try {
+    // No robots.txt check here on purpose: this page is watched because its
+    // owner subscribed and asked us to watch it. Authority comes from that
+    // agreement, and a crawler-directed file is not how it would be withdrawn.
+    // The uninvited prospecting CLIs do respect robots.txt — see scanOne.
     const scan = (await scanOne(browser, page.url, { sendGPC: true, writeReports: false })) as Record<string, unknown>;
     if (scan.loadError) throw new Error(`couldn't load the page — ${cleanError(scan.loadError)}`);
 

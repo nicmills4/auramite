@@ -121,6 +121,9 @@ const EV_TAG: Record<string, string> = {
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  // Affirmative statement of authority to scan the target. Also enforced by the
+  // API — this checkbox is the record, not the gate.
+  const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
@@ -189,6 +192,7 @@ export default function Home() {
   async function runScan(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
+    if (!authorized) { setError("Confirm you own this site or are authorized to scan it."); return; }
     setLoading(true); setElapsed(0); setError(""); setResult(null);
     setShowWaitEmail(false); setWaitEmailSent(false); setWaitEmail("");
     setOpenEvs(new Set());
@@ -198,7 +202,7 @@ export default function Home() {
     setReplayT(null);
     replayedFor.current = null;
     try {
-      const res = await fetch("/api/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) });
+      const res = await fetch("/api/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url, authorized }) });
       const data = await res.json();
       if (!data.ok) setError(data.error || "Scan failed.");
       else setResult(data);
@@ -261,7 +265,7 @@ export default function Home() {
     if (!waitEmail.trim()) return;
     setWaitEmailSent(true);
     try {
-      await fetch("/api/scan-email", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: waitEmail, url }) });
+      await fetch("/api/scan-email", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: waitEmail, url, authorized }) });
     } catch { /* the report is already queued server-side on success; nothing useful to show here */ }
   }
 
@@ -351,7 +355,23 @@ export default function Home() {
               ) : "Scan my site"}
             </button>
           </form>
-          <p className="fade-up mt-3 text-xs text-zinc-600" style={{ animationDelay: "280ms" }}>No signup · results in ~20 seconds · plain-English findings, not legal advice</p>
+
+          {/* The attestation sits at the point of use rather than only in the
+              terms. It is what makes every scan an authorized one on its face. */}
+          <label className="fade-up mx-auto mt-4 flex max-w-xl cursor-pointer items-start gap-2.5 text-left text-xs leading-relaxed text-zinc-500" style={{ animationDelay: "255ms" }}>
+            <input
+              type="checkbox"
+              checked={authorized}
+              onChange={(e) => setAuthorized(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#e3b341]"
+            />
+            <span>
+              I own this website, or I am authorized by its owner to have it scanned. Auramite loads the page
+              once as an ordinary visitor and records what it requests.
+            </span>
+          </label>
+
+          <p className="fade-up mt-3 text-xs text-zinc-600" style={{ animationDelay: "280ms" }}>No signup · results in ~20 seconds · a technical measurement, not legal advice</p>
 
           {error && (
             <div className="mt-5 mx-auto max-w-xl rounded-[2px] border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
@@ -591,6 +611,19 @@ export default function Home() {
                 )}
                 <p className="mt-2 text-xs text-zinc-500">That exact request fires <b className="text-zinc-400">before</b> your consent banner. Or check <span className="font-mono" style={{ color: gold }}>blacklight.themarkup.org</span>.</p>
               </div>
+
+              {/* Scope statement sits with the findings, not only in the footer —
+                  this is the point where a reader forms a belief about their
+                  legal position, so it is the point that needs qualifying. */}
+              <p className={`${rule} pt-4 text-xs leading-relaxed text-zinc-600`}>
+                <b className="font-medium text-zinc-500">What this is:</b> a record of what one automated visit
+                observed — which requests your page made, and when. Auramite is not a law firm and this is not
+                legal advice or a certification of compliance; whether any of it amounts to a violation depends
+                on facts we don&apos;t assess. One page load can also miss things — a control inside your consent
+                dialog, a policy published as a PDF, anything rendered only after interaction — so treat each
+                item as something to verify. If we&apos;ve got something wrong,{" "}
+                <a href="mailto:hello@auramite.io" className="underline underline-offset-2 hover:text-zinc-400">tell us</a> and we&apos;ll re-scan.
+              </p>
             </div>
 
           </div>

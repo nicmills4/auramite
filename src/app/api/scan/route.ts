@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { url?: string };
+  let body: { url?: string; authorized?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -26,6 +26,16 @@ export async function POST(req: Request) {
 
   const input = (body?.url || "").toString().trim();
   if (!input) return NextResponse.json({ ok: false, error: "Enter a website URL." }, { status: 400 });
+
+  // Checked server-side, not just in the form: the point is that no scan runs
+  // without an affirmative statement of authority, and a client-side checkbox
+  // is trivially skipped by anyone posting straight to this endpoint.
+  if (body?.authorized !== true) {
+    return NextResponse.json(
+      { ok: false, error: "Confirm you own this site or are authorized to scan it." },
+      { status: 400 },
+    );
+  }
 
   const scanner = await import("../../../../lib/scanner.mjs");
   const { buildExplainers } = await import("../../../../lib/explainers.mjs");

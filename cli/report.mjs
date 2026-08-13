@@ -12,8 +12,13 @@ if (!arg) { console.error('Usage: node cli/report.mjs <url>'); process.exit(1); 
 const url = normalizeUrl(arg);
 
 const browser = await chromium.launch();
-const scan = await scanOne(browser, url, { sendGPC: true, writeReports: false });
+const scan = await scanOne(browser, url, { sendGPC: true, writeReports: false, respectRobots: true });
 await browser.close();
+
+if (scan.skipped) {
+  console.error(`Skipped ${url} — ${scan.skippedReason}. No proof page generated.`);
+  process.exit(2);
+}
 
 const host = hostOf(url);
 const { html, explainers, firstShareMs, bannerMs } = renderProofPage(scan, host);

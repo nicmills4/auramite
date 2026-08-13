@@ -34,11 +34,18 @@ async function worker() {
   while (cursor < targets.length) {
     const i = cursor++; const t = targets[i];
     try {
-      const scan = await scanOne(browser, t.url, { sendGPC: true, writeReports: false });
-      const audience = (t.employees != null || t.revenue != null)
-        ? { source: 'firmographic', employees: t.employees, revenue: t.revenue, country: t.country } : { source: 'none' };
-      const risk = scoreRisk(scan, audience);
-      scored[i] = { t, scan, risk };
+      const scan = await scanOne(browser, t.url, { sendGPC: true, writeReports: false, respectRobots: true });
+      if (scan.skipped) {
+        // Scored 0 so it falls below minScore and never reaches the outreach
+        // sheet: a site whose robots.txt turned us away must not be contacted
+        // about findings we never made.
+        scored[i] = { t, scan, risk: { score: 0, band: 'SKIPPED', exposures: [scan.skippedReason] }, skipped: true };
+      } else {
+        const audience = (t.employees != null || t.revenue != null)
+          ? { source: 'firmographic', employees: t.employees, revenue: t.revenue, country: t.country } : { source: 'none' };
+        const risk = scoreRisk(scan, audience);
+        scored[i] = { t, scan, risk };
+      }
     } catch (e) { scored[i] = { t, scan: {}, risk: { score: 0, band: 'FAILED' }, error: String(e.message || e) }; }
     console.log(`  [${++done}/${targets.length}] ${hostOf(t.url)} — ${scored[i].risk.band} ${scored[i].risk.score || 0}`);
   }

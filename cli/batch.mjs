@@ -46,10 +46,16 @@ async function worker() {
     const i = cursor++;
     const t = rows[i];
     try {
-      const scan = await scanOne(browser, t.url, { sendGPC });
-      const audience = await audienceFor(t);
-      const risk = scoreRisk(scan, audience);
-      results[i] = { scan, risk, url: t.url, target: t };
+      const scan = await scanOne(browser, t.url, { sendGPC, respectRobots: true });
+      if (scan.skipped) {
+        // Must not fall through to scoreRisk: an unscanned site would score 0
+        // and read as "no exposure", which is the opposite of what we know.
+        results[i] = { url: t.url, target: t, scan, skipped: true, risk: { score: 0, band: 'SKIPPED', exposures: [scan.skippedReason] } };
+      } else {
+        const audience = await audienceFor(t);
+        const risk = scoreRisk(scan, audience);
+        results[i] = { scan, risk, url: t.url, target: t };
+      }
     } catch (e) {
       results[i] = { url: t.url, target: t, error: String(e.message || e), risk: { score: 0, band: 'FAILED', exposures: [] }, scan: {} };
     }
