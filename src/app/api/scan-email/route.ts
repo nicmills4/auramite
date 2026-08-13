@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { resendSend, isEmail } from "../../../lib/email";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import type { ScanData, Explainer } from "@/lib/scan-types";
 
 export const runtime = "nodejs";
 
@@ -19,7 +21,7 @@ async function scanAndSend(input: string, email: string) {
   let browser;
   try {
     browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-    const scan = await scanner.scanOne(browser, url, { sendGPC: true, writeReports: false }) as Record<string, any>;
+    const scan = await scanner.scanOne(browser, url, { sendGPC: true, writeReports: false }) as ScanData;
 
     if (scan.loadError) {
       await resendSend({
@@ -30,7 +32,7 @@ async function scanAndSend(input: string, email: string) {
       return;
     }
 
-    const explainers = buildExplainers(scan) as Record<string, any>[];
+    const explainers = buildExplainers(scan) as Explainer[];
     const hard = scan.hardSaleShare || [];
     const firstShareMs = hard.length ? Math.min(...hard.map((t: { t?: number }) => t.t || 0)) : null;
 
@@ -112,6 +114,15 @@ async function scanAndSend(input: string, email: string) {
 }
 
 export async function POST(req: Request) {
+  // Emailed scans cost a Chromium run AND a Resend send — tighter than /api/scan.
+  const rl = rateLimit(`scan-email:${await clientIp()}`, 3, 3600e3);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests from your network — try again in a little while." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } },
+    );
+  }
+
   let body: { email?: string; url?: string };
   try {
     body = await req.json();

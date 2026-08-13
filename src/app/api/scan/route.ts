@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { chromium } from "playwright";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import type { ScanData, TrackerHit } from "@/lib/scan-types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  // Each scan holds a Chromium instance for ~25s — a handful per hour per
+  // visitor is generous; more is a bot burning our CPU.
+  const rl = rateLimit(`scan:${await clientIp()}`, 6, 3600e3);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many scans from your network — try again in a little while." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } },
+    );
+  }
+
   let body: { url?: string };
   try {
     body = await req.json();
@@ -22,7 +34,7 @@ export async function POST(req: Request) {
   let browser;
   try {
     browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-    const scan = await scanner.scanOne(browser, url, { sendGPC: true, writeReports: false }) as Record<string, any>;
+    const scan = await scanner.scanOne(browser, url, { sendGPC: true, writeReports: false }) as ScanData;
     if (scan.loadError) {
       return NextResponse.json({
         ok: false,
@@ -43,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     // Exact string a visitor can paste into DevTools → Network → Ctrl+F to see it fire.
-    const primary = ((scan.trackers || []) as Record<string, any>[]).find((t) => disclosed.has(t.name) && t.sample);
+    const primary = (scan.trackers || []).find((t) => disclosed.has(t.name) && t.sample);
     let verifySearch: string | null = null;
     try {
       if (primary?.sample) { const u = new URL(primary.sample); verifySearch = u.hostname.replace(/^www\./, "") + u.pathname; }
@@ -63,8 +75,8 @@ export async function POST(req: Request) {
     // as an anonymous event: real timestamp, no vendor.
     type Ev = { t: number; kind: string; label: string; detail?: string; tag?: string };
     const fmtT = (ms: number) => (ms / 1000).toFixed(2) + "s";
-    const short = (u: string) => {
-      try { const x = new URL(u); const s = x.hostname.replace(/^www\./, "") + x.pathname; return s.length > 64 ? s.slice(0, 64) + "…" : s; }
+    const short = (u?: string) => {
+      try { const x = new URL(u ?? ""); const s = x.hostname.replace(/^www\./, "") + x.pathname; return s.length > 64 ? s.slice(0, 64) + "…" : s; }
       catch { return ""; }
     };
 
@@ -77,8 +89,8 @@ export async function POST(req: Request) {
       });
     }
 
-    const fired = ((scan.trackers || []) as Record<string, any>[])
-      .filter((t) => typeof t.t === "number")
+    const fired = (scan.trackers || [])
+      .filter((t): t is TrackerHit & { t: number } => typeof t.t === "number")
       .sort((a, b) => a.t - b.t);
     const named = fired.filter((t) => disclosed.has(t.name)).slice(0, 5);
     const anon = fired.filter((t) => !named.includes(t));
@@ -113,11 +125,12 @@ export async function POST(req: Request) {
       });
     }
 
-    if (scan.bannerMs != null) {
+    const bannerMs = scan.bannerMs;
+    if (bannerMs != null) {
       const cmpName = (scan.cmps || [])[0]?.name;
-      const leaksBefore = events.some((e) => (e.kind === "leak" || e.kind === "locked") && e.t < scan.bannerMs);
+      const leaksBefore = events.some((e) => (e.kind === "leak" || e.kind === "locked") && e.t < bannerMs);
       events.push({
-        t: scan.bannerMs, kind: "banner",
+        t: bannerMs, kind: "banner",
         label: `${cmpName ? `${cmpName} consent banner` : "The consent banner"} appears`,
         detail: leaksBefore ? "Everything above happened before anyone could say no" : undefined,
       });

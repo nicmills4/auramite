@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "./lib/db";
 import { verifyPassword } from "./lib/passwords";
+import { rateLimit } from "./lib/rate-limit";
 
 /**
  * Email + password sign-in. Sessions are JWTs — the Credentials provider does
@@ -22,10 +23,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
+
+        // The throttle lives HERE, not in loginAction: Auth.js exposes
+        // /api/auth/callback/credentials as a plain HTTP endpoint, so a
+        // brute-forcer would simply skip any check the form action does.
+        // Keyed on IP+email: slows guessing against one account without
+        // letting an attacker lock the real owner out from elsewhere.
+        const ip = request?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+        if (!rateLimit(`login:${ip}:${email}`, 10, 15 * 60e3).ok) return null;
 
         const user = await db.user.findUnique({ where: { email } });
         // Same null for unknown email and wrong password — no account probing.
