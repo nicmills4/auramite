@@ -24,6 +24,9 @@ model User {
   name          String?
   emailVerified DateTime?
   image         String?
+  // Nullable: accounts created in the magic-link era set theirs through the
+  // password-reset flow. scrypt, formatted by src/lib/passwords.ts.
+  passwordHash  String?
 
   orgId String?
   org   Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)

@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { loginAction } from "@/lib/auth-actions";
-import { AuthForm } from "./auth-form";
+import { signupAction } from "@/lib/auth-actions";
+import { MIN_PASSWORD_LENGTH } from "@/lib/passwords";
+import { AuthForm } from "../login/auth-form";
 
-export const metadata: Metadata = { title: "Sign in — Auramite" };
+export const metadata: Metadata = { title: "Create your account — Auramite" };
 
 const gold = "#e3b341";
 
-export default async function LoginPage() {
+export default async function SignupPage() {
   const session = await auth();
   if (session?.user) redirect("/dashboard");
 
@@ -21,26 +22,21 @@ export default async function LoginPage() {
         </a>
 
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
-          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Sign in</h1>
+          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Create your account</h1>
+          <p className="mt-1.5 text-sm text-zinc-400">Watch your pages and get reports the moment something leaks.</p>
           <AuthForm
-            action={loginAction}
+            action={signupAction}
             fields={[
               { name: "email", type: "email", placeholder: "you@company.com", autoComplete: "email" },
-              { name: "password", type: "password", placeholder: "Password", autoComplete: "current-password" },
+              { name: "password", type: "password", placeholder: `Password (${MIN_PASSWORD_LENGTH}+ characters)`, autoComplete: "new-password", minLength: MIN_PASSWORD_LENGTH },
             ]}
-            submitLabel="Sign in"
-            pendingLabel="Signing in…"
+            submitLabel="Create account"
+            pendingLabel="Creating…"
           />
-          <p className="mt-4 text-center text-sm">
-            <a href="/forgot-password" className="text-zinc-500 transition hover:text-zinc-300">Forgot password?</a>
-          </p>
         </div>
 
         <p className="mt-5 text-center text-sm text-zinc-500">
-          New to Auramite? <a href="/signup" className="font-medium transition hover:brightness-110" style={{ color: gold }}>Create an account</a>
-        </p>
-        <p className="mt-2 text-center text-xs">
-          <a href="/" className="text-zinc-500 transition hover:text-zinc-300">← Back to auramite.io</a>
+          Already have an account? <a href="/login" className="font-medium transition hover:brightness-110" style={{ color: gold }}>Sign in</a>
         </p>
       </div>
     </main>

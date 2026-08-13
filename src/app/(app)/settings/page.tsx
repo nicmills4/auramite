@@ -6,6 +6,7 @@ import { PLANS, planFor } from "@/lib/plans";
 import { removePage, togglePage, removeRecipient } from "./actions";
 import { AddPageForm } from "./add-page-form";
 import { RecipientForm } from "./recipient-form";
+import { PasswordForm } from "./password-form";
 import { CheckoutButton, PortalButton } from "./billing-buttons";
 import { gold, card, eyebrow, fmtDate } from "../ui";
 
@@ -135,6 +136,21 @@ export default async function SettingsPage({
               </div>
             </>
           )}
+        </section>
+
+        {/* ---- password ---- */}
+        <section className="space-y-4">
+          <p className={eyebrow} style={{ color: gold }}>Password</p>
+          <div className={`${card} p-6`}>
+            <p className="mb-4 text-sm text-zinc-400">
+              {user.passwordHash
+                ? "Change the password you sign in with."
+                : "Your account predates passwords — set one to sign in without email links."}
+            </p>
+            <div className="max-w-sm">
+              <PasswordForm hasPassword={Boolean(user.passwordHash)} />
+            </div>
+          </div>
         </section>
 
         {/* ---- report recipients ---- */}
