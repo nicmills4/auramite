@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # postinstall runs `prisma generate`; the client itself never connects here.
+      # Browsers aren't needed to typecheck or build — skipping saves ~1 min/run.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Build
+        run: npm run build
+        env:
+          # next build evaluates auth config at compile time; any value works —
+          # runtime secrets live in Railway, never here.
+          AUTH_SECRET: ci-build-only-not-a-secret

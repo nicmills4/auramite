@@ -55,3 +55,10 @@ next-env.d.ts
 
 # Prisma generated client (regenerated on install via postinstall)
 /src/generated
+
+# Editor/agent tooling: vendored skill docs and lockfiles, not project code.
+# .claude/launch.json IS committed — it tells the dev-server tooling how to run.
+/.agents
+/.windsurf
+/.claude/skills
+/skills-lock.json

@@ -1,10 +1,11 @@
+import Link from "next/link";
 export const metadata = { title: "Terms of Service — Auramite" };
 
 export default function Terms() {
   return (
     <main className="flex-1 text-zinc-300">
       <div className="mx-auto max-w-2xl px-5 py-16">
-        <a href="/" className="text-sm" style={{ color: "#e3b341" }}>← Auramite</a>
+        <Link href="/" className="text-sm" style={{ color: "#e3b341" }}>← Auramite</Link>
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Terms of Service</h1>
         <p className="mt-2 text-sm text-zinc-500">Last updated: {new Date().toISOString().slice(0, 10)}. Template — review with counsel before launch.</p>
 

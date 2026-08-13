@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useRef, useState } from "react";
 
 type LogLine = { text: string; danger?: boolean; ok?: boolean };
@@ -116,10 +118,11 @@ export default function Home() {
     return () => { live = false; };
   }, []);
 
-  // Drives the countdown and stage list while a scan is in flight.
+  // Drives the countdown and stage list while a scan is in flight. The reset
+  // to 0 happens in the submit handler alongside setLoading(true) — a sync
+  // setState here would just schedule an extra render pass.
   useEffect(() => {
     if (!loading) return;
-    setElapsed(0);
     const startedAt = Date.now();
     const id = setInterval(() => setElapsed(Date.now() - startedAt), 100);
     return () => clearInterval(id);
@@ -151,7 +154,7 @@ export default function Home() {
   async function runScan(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setElapsed(0); setError(""); setResult(null);
     setShowWaitEmail(false); setWaitEmailSent(false); setWaitEmail("");
     setOpenEvs(new Set());
     // A replay in flight would otherwise be cancelled mid-way and leave replayT
@@ -214,7 +217,6 @@ export default function Home() {
     );
     io.observe(el);
     return () => { io.disconnect(); clearTimeout(timer); cancelAnimationFrame(replayRaf.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
   // Hands the scan off to the server, which runs its own and emails the report —
@@ -258,10 +260,10 @@ export default function Home() {
       {/* ---------- nav ---------- */}
       <nav className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#0b0a08]/80 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-1.5">
+          <Link href="/" className="flex items-center gap-1.5">
             <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
-          </a>
+          </Link>
           <div className="flex items-center gap-5 sm:gap-8 text-[13px] text-zinc-500">
             <a href="#how" className="hidden sm:inline hover:text-zinc-200 transition-colors">How it works</a>
             <a href="#checks" className="hidden sm:inline hover:text-zinc-200 transition-colors">What we check</a>

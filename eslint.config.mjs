@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // `const { stripped, ...rest } = obj` is how scanner.mjs excludes keys —
+      // the "unused" binding is the point.
+      "@typescript-eslint/no-unused-vars": ["warn", { ignoreRestSiblings: true, args: "after-used", argsIgnorePattern: "^_" }],
+    },
+  },
 ]);
 
 export default eslintConfig;

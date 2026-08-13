@@ -1,7 +1,0 @@
-{
-  "operatorEmail": "you@example.com",
-  "sites": [
-    { "url": "vermontsystems.com", "ownerEmail": "demo@example.com", "cadence": "weekly" },
-    { "url": "structuremedical.com", "ownerEmail": "", "cadence": "weekly" }
-  ]
-}

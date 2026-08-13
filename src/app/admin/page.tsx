@@ -38,7 +38,13 @@ export default async function AdminPage() {
   });
 
   const testInbox = process.env.ADMIN_TEST_EMAIL || process.env.LEAD_NOTIFY_EMAIL || null;
-  const suggestedEmail = `test+${Date.now().toString(36)}@auramite.io`;
+  // Derived from the data rather than the clock (render purity): the first
+  // test+N address no current member holds. A collision with an org-less user
+  // just surfaces the action's "already belongs" error, which is harmless.
+  const taken = new Set(orgs.flatMap((o) => o.users.map((u) => u.email)));
+  let testN = 1;
+  while (taken.has(`test+${testN}@auramite.io`)) testN++;
+  const suggestedEmail = `test+${testN}@auramite.io`;
   const billableCount = orgs.filter((o) => o.subscription && BILLABLE.has(o.subscription.status)).length;
   const pageCount = orgs.reduce((n, o) => n + o.sites.reduce((m, s) => m + s.pages.length, 0), 0);
 

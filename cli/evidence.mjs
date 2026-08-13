@@ -20,7 +20,6 @@ ctx.on('request', (r) => { if (TRACKER_HOSTS.test(r.url())) reqs.push({ m: r.met
 const p = await ctx.newPage();
 // prove no interaction: wrap the input methods
 p.on('framenavigated', () => {});
-const t0 = Date.now();
 await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
 await p.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
 await p.waitForTimeout(4000);

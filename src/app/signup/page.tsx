@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -16,10 +17,10 @@ export default async function SignupPage() {
   return (
     <main className="flex-1 flex items-center justify-center px-6 py-20">
       <div className="w-full max-w-sm">
-        <a href="/" className="mb-8 flex items-center justify-center gap-1.5">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-1.5">
           <span className="text-lg font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Auramite</span>
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
-        </a>
+        </Link>
 
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
           <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Create your account</h1>

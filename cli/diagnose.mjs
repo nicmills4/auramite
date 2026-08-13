@@ -11,8 +11,7 @@
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { TRACKERS } from '../lib/signatures.mjs';
-import { scanOne, normalizeUrl, hostOf, stamp } from '../lib/scanner.mjs';
+import { scanOne, normalizeUrl, hostOf } from '../lib/scanner.mjs';
 
 // Inline signatures: if these appear in the SERVED HTML, the tracker is hardcoded
 // into the page/theme (fix = re-tag or move behind consent). If a tracker fires at
