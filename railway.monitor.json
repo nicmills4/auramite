@@ -1,5 +1,17 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "watchPatterns": [
+      "lib/**",
+      "cli/**",
+      "src/lib/**",
+      "prisma/**",
+      "package.json",
+      "package-lock.json",
+      "Dockerfile",
+      "railway.monitor.json"
+    ]
+  },
   "deploy": {
     "startCommand": "npm run monitor",
     "cronSchedule": "0 8 * * *",
