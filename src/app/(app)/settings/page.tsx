@@ -60,7 +60,7 @@ export default async function SettingsPage({
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-6 py-12">
         {checkout === "success" && (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] p-4 text-sm text-emerald-200">
+          <div className="rounded-[2px] border border-emerald-500/30 bg-emerald-500/[0.07] p-4 text-sm text-emerald-200">
             Payment received. Your subscription may take a few seconds to appear here while Stripe confirms it.
           </div>
         )}
@@ -95,7 +95,7 @@ export default async function SettingsPage({
               </div>
 
               {sub.status === "PAST_DUE" && (
-                <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-sm text-red-300">
+                <p className="mt-4 rounded-[2px] border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-sm text-red-300">
                   Your last payment failed. Update your card in the billing portal to keep scans running.
                 </p>
               )}
@@ -110,7 +110,7 @@ export default async function SettingsPage({
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 {PLANS.map((p) => (
-                  <div key={p.plan} className={`flex flex-col rounded-2xl border p-6 bg-white/[0.02] ${p.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
+                  <div key={p.plan} className={`flex flex-col rounded-[2px] border p-6 bg-white/[0.02] ${p.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
                     <div className="flex items-baseline justify-between">
                       <h3 className="font-semibold text-white">{p.name}</h3>
                       {p.hot && <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: gold }}>Most popular</span>}
@@ -177,7 +177,7 @@ export default async function SettingsPage({
                     {recipients.length > 1 ? (
                       <form action={removeRecipient}>
                         <input type="hidden" name="recipientId" value={r.id} />
-                        <button type="submit" className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-red-500/40 hover:text-red-300">
+                        <button type="submit" className="rounded-[2px] border border-white/10 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-red-500/40 hover:text-red-300">
                           Remove
                         </button>
                       </form>
@@ -232,13 +232,13 @@ export default async function SettingsPage({
                     </div>
                     <form action={togglePage}>
                       <input type="hidden" name="pageId" value={p.id} />
-                      <button type="submit" className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-400 transition hover:text-white">
+                      <button type="submit" className="rounded-[2px] border border-white/10 px-3 py-1.5 text-xs text-zinc-400 transition hover:text-white">
                         {p.enabled ? "Pause" : "Resume"}
                       </button>
                     </form>
                     <form action={removePage}>
                       <input type="hidden" name="pageId" value={p.id} />
-                      <button type="submit" className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-red-500/40 hover:text-red-300">
+                      <button type="submit" className="rounded-[2px] border border-white/10 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-red-500/40 hover:text-red-300">
                         Remove
                       </button>
                     </form>

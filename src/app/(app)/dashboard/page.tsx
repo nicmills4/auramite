@@ -231,7 +231,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               <a
                 key={r.key}
                 href={qs({ range: r.key, from: undefined, to: undefined })}
-                className={`rounded-lg px-3 py-1.5 transition ${on ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-200"}`}
+                className={`rounded-[2px] px-3 py-1.5 transition ${on ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-200"}`}
               >
                 {r.label}
               </a>
@@ -245,23 +245,23 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <label className="text-xs text-zinc-500">
           From
           <input type="date" name="from" defaultValue={q.from ?? ""}
-            className="mt-1 block rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]" />
+            className="mt-1 block rounded-[2px] border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]" />
         </label>
         <label className="text-xs text-zinc-500">
           To
           <input type="date" name="to" defaultValue={q.to ?? ""}
-            className="mt-1 block rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]" />
+            className="mt-1 block rounded-[2px] border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]" />
         </label>
         <label className="text-xs text-zinc-500">
           Page
           <select name="page" defaultValue={pageFilter ?? ""}
-            className="mt-1 block max-w-[16rem] rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]">
+            className="mt-1 block max-w-[16rem] rounded-[2px] border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm text-white outline-none focus:border-[#e3b341]">
             <option value="">All pages</option>
             {pages.map((p) => <option key={p.id} value={p.id}>{p.label || p.url}</option>)}
           </select>
         </label>
         <input type="hidden" name="sort" value={sort} />
-        <button type="submit" className="rounded-lg px-4 py-1.5 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
+        <button type="submit" className="rounded-[2px] px-4 py-1.5 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
           Apply
         </button>
         {(usingCustom || pageFilter) && (
@@ -270,7 +270,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </form>
 
       {/* Current standing, before any of the range-dependent numbers. */}
-      <div className={`rounded-2xl border p-5 ${status.cls}`} role="status">
+      <div className={`rounded-[2px] border p-5 ${status.cls}`} role="status">
         <div className="flex items-center gap-3">
           <span className={`h-3 w-3 shrink-0 rounded-full ${status.dot}`} aria-hidden />
           <div className="min-w-0">
@@ -310,7 +310,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
             Add the pages that matter most — your homepage, top landing pages, and checkout — and we&apos;ll scan them on your plan&apos;s schedule.
           </p>
-          <a href="/settings" className="mt-5 inline-block rounded-lg px-5 py-2.5 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
+          <a href="/settings" className="mt-5 inline-block rounded-[2px] px-5 py-2.5 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
             Choose pages to watch
           </a>
         </div>

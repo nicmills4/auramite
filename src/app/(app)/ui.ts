@@ -1,7 +1,9 @@
 // Shared tokens for the signed-in surface, so the layout, dashboard and
 // settings pages stop each carrying their own copy.
 export const gold = "#e3b341";
-export const card = "rounded-2xl border border-white/[0.08] bg-white/[0.02]";
+/** Machined 2px edge, matching the marketing surface — see the note in page.tsx. */
+export const card = "rounded-[2px] border border-white/[0.09] bg-white/[0.015]";
+export const rule = "border-t border-white/[0.09]";
 export const eyebrow = "font-mono text-[11px] uppercase tracking-[0.2em]";
 
 export const fmtDate = (d: Date | null | undefined) =>

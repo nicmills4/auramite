@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
         </Link>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
+        <div className="rounded-[2px] border border-white/[0.08] bg-white/[0.02] p-6">
           <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Reset your password</h1>
           <p className="mt-1.5 text-sm text-zinc-400">
             We&apos;ll email you a link to set a new one. This is also how you set your first password if you joined before passwords existed.

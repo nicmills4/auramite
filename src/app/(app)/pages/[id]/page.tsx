@@ -120,7 +120,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
           {latestOk && (
             <a
               href={`/pages/${page.id}/report`}
-              className="rounded-lg border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.12]"
+              className="rounded-[2px] border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.12]"
             >
               Printable report
             </a>
@@ -139,7 +139,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
             Nothing to show yet — this page hasn&apos;t completed a scan.
           </div>
         ) : findings.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] p-6 text-sm text-emerald-200">
+          <div className="rounded-[2px] border border-emerald-500/30 bg-emerald-500/[0.07] p-6 text-sm text-emerald-200">
             No trackers fired before consent on the latest scan.
           </div>
         ) : (
@@ -154,7 +154,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
                 {f.paragraph && <p className="text-[15px] leading-relaxed text-zinc-300">{f.paragraph}</p>}
 
                 {(f.logLines?.length ?? 0) > 0 && (
-                  <pre className="mt-3 whitespace-pre-wrap break-all rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-xs leading-relaxed">
+                  <pre className="mt-3 whitespace-pre-wrap break-all rounded-[2px] border border-white/10 bg-black/40 p-3 font-mono text-xs leading-relaxed">
                     {f.logLines!.map((l, j) => (
                       <div key={j} className={l.danger ? "font-medium text-red-400" : l.ok ? "text-emerald-400" : "text-zinc-400"}>{l.text}</div>
                     ))}
@@ -162,7 +162,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
                 )}
 
                 {search && (
-                  <div className="mt-3 rounded-lg border p-3" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
+                  <div className="mt-3 rounded-[2px] border p-3" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
                     <p className="text-xs text-zinc-400">
                       <b className="font-medium text-zinc-200">For your web team:</b> after applying a fix, open the page in Chrome →
                       <b className="text-zinc-200"> F12</b> → <b className="text-zinc-200">Network</b> → <b className="text-zinc-200">Ctrl+F</b> → paste this and reload.

@@ -20,8 +20,34 @@ const gold = "#e3b341";
 // Set to your Calendly (or other booking) URL to enable direct booking in the modal.
 const CALENDLY_URL = "";
 
-const card = "rounded-2xl border border-white/[0.08] bg-white/[0.02]";
+// A machined edge, not a soft bubble: 2px reads as milled metal and is the
+// single biggest departure from the default 16px-everywhere look. Boxes are
+// now the exception — most content sits directly on the page, separated by
+// hairline rules, the way a printed audit separates its sections.
+const card = "rounded-[2px] border border-white/[0.09] bg-white/[0.015]";
+const rule = "border-t border-white/[0.09]";
 const eyebrow = "font-mono text-[11px] uppercase tracking-[0.2em]";
+
+/**
+ * Section headers as ledger entries: a numbered gutter on the left, the title
+ * hanging to its right, a hairline rule across the top. Deliberately asymmetric
+ * and left-aligned — the hero is the poster, everything below it is the
+ * document, and the two should not look like the same thing.
+ */
+function SectionHead({ n, label, title, note }: { n: string; label: string; title: string; note?: string }) {
+  return (
+    <div data-reveal className={`${rule} grid gap-x-10 gap-y-4 pt-6 md:grid-cols-[10rem_1fr]`}>
+      <div className={eyebrow}>
+        <span className="tnum" style={{ color: gold }}>{n}</span>
+        <span className="mt-2 block text-zinc-600">{label}</span>
+      </div>
+      <div>
+        <h2 className="display text-[clamp(1.75rem,4vw,2.9rem)] font-bold text-white">{title}</h2>
+        {note && <p className="mt-3.5 max-w-xl text-[15px] leading-relaxed text-zinc-500">{note}</p>}
+      </div>
+    </div>
+  );
+}
 
 const BENTO = [
   { n: "01", k: "Probe", h: "We find the gaps first", p: "Headless Chrome opens your site cold — no cookies, no history — and records every request that fires before anyone touches your consent banner." },
@@ -37,6 +63,15 @@ const CHECKS = [
   ["Video + Meta Pixel (VPPA)", "Tells Facebook which videos a visitor watched — a fast-growing class-action wave."],
   ["A cookie banner that doesn’t block", "Termly/CookieYes installed but not gating anything — the Tractor Supply $1.35M pattern."],
   ["Missing “Your Privacy Choices” opt-out", "Required for any business that sells or shares data."],
+];
+
+// One representative capture for the landing exhibit. Real timings from a real
+// scan — the banner genuinely arrived at 7.21s, which is why the gap is worth
+// drawing to scale rather than describing.
+const EXHIBIT = [
+  { t: "0.31s", m: "GET", u: "snap.licdn.com/li.lms-analytics/insight.min.js" },
+  { t: "0.44s", m: "GET", u: "www.google-analytics.com/g/collect?v=2&tid=G-XXXX" },
+  { t: "0.68s", m: "POST", u: "px.ads.linkedin.com/collect" },
 ];
 
 const TIERS = [
@@ -282,12 +317,20 @@ export default function Home() {
       <section id="top" className="relative overflow-hidden scroll-mt-14">
         <div aria-hidden className="fade-in pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[420px] w-[900px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.14), transparent)" }} />
         <div aria-hidden className="fade-in pointer-events-none select-none absolute inset-0 flex items-center justify-center" style={{ animationDelay: "160ms" }}>
-          <span className="watermark font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1 }}>AURAMITE</span>
+          {/* Held well back. The headline now runs at 76px over three lines and
+              the wordmark was competing with it rather than sitting behind it.
+              The opacity goes on the span, not the wrapper: the wrapper's
+              fade-in animation ends at opacity 1 and, since animations outrank
+              inline styles, would overwrite anything set there. */}
+          <span className="watermark font-bold tracking-tighter whitespace-nowrap" style={{ fontFamily: "var(--font-display)", fontSize: "26vw", lineHeight: 1, opacity: 0.45 }}>AURAMITE</span>
         </div>
 
         <div className="relative z-10 mx-auto max-w-3xl px-6 pt-20 pb-16 text-center">
           <p className={`${eyebrow} fade-up mb-6`} style={{ color: gold }}>Pre-consent defense &amp; monitoring</p>
-          <h1 className="fade-up text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05]" style={{ fontFamily: "var(--font-display)", color: gold, animationDelay: "70ms" }}>Enlist Auramite to watch your site like an eagle.</h1>
+          {/* The one piece of type on the site allowed to be loud. Everything
+              below is 15px and grey, and that contrast is the point — a narrow
+              type band is what makes a page feel machine-assembled. */}
+          <h1 className="fade-up display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold" style={{ color: gold, animationDelay: "70ms" }}>Enlist Auramite to watch your site like an eagle.</h1>
           <p className="fade-up mt-5 text-[17px] leading-relaxed text-zinc-400 max-w-2xl mx-auto" style={{ animationDelay: "140ms" }}>
             <span className="text-zinc-100 font-medium">Armor your site against consumer data leaks.</span> We load
             it as a real visitor, catch every tracker that hands personal data to advertisers before anyone
@@ -298,10 +341,10 @@ export default function Home() {
             <input
               value={url} onChange={(e) => setUrl(e.target.value)}
               placeholder="yourcompany.com" inputMode="url"
-              className="flex-1 rounded-lg bg-white/[0.04] border border-white/15 px-4 py-3 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341] focus:ring-2 focus:ring-[#e3b341]/25 transition"
+              className="flex-1 rounded-[2px] bg-white/[0.04] border border-white/15 px-4 py-3 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341] focus:ring-2 focus:ring-[#e3b341]/25 transition"
             />
             <button type="submit" disabled={loading}
-              className="rounded-lg px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-[2px] px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110 disabled:opacity-60"
               style={{ background: gold }}>
               {loading ? (
                 <span className="flex items-center gap-2"><span className="inline-block h-4 w-4 rounded-full border-2 border-[#0b0a08]/40 border-t-[#0b0a08] animate-spin" />Scanning…</span>
@@ -311,7 +354,7 @@ export default function Home() {
           <p className="fade-up mt-3 text-xs text-zinc-600" style={{ animationDelay: "280ms" }}>No signup · results in ~20 seconds · plain-English findings, not legal advice</p>
 
           {error && (
-            <div className="mt-5 mx-auto max-w-xl rounded-lg border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
+            <div className="mt-5 mx-auto max-w-xl rounded-[2px] border border-red-500/30 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           )}
@@ -375,9 +418,9 @@ export default function Home() {
                     <input
                       type="email" required autoFocus value={waitEmail} onChange={(e) => setWaitEmail(e.target.value)}
                       placeholder="you@company.com"
-                      className="min-w-0 flex-1 rounded-lg bg-white/[0.05] border border-white/15 px-3 py-2 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]"
+                      className="min-w-0 flex-1 rounded-[2px] bg-white/[0.05] border border-white/15 px-3 py-2 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]"
                     />
-                    <button type="submit" className="shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
+                    <button type="submit" className="shrink-0 rounded-[2px] px-3.5 py-2 text-sm font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>
                       Email it
                     </button>
                   </form>
@@ -405,7 +448,7 @@ export default function Home() {
             <div className="space-y-4">
               <p className={eyebrow} style={{ color: gold }}>Results</p>
 
-              <div className={`rounded-2xl border p-5 ${leaked ? "border-red-500/30 bg-red-500/[0.07]" : "border-emerald-500/30 bg-emerald-500/[0.07]"}`}>
+              <div className={`rounded-[2px] border p-5 ${leaked ? "border-red-500/30 bg-red-500/[0.07]" : "border-emerald-500/30 bg-emerald-500/[0.07]"}`}>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-white">{result.host}</span>
                   <span className={`text-xs font-semibold rounded-full px-3 py-1 ${leaked ? "bg-red-500/15 text-red-300" : "bg-emerald-500/15 text-emerald-300"}`}>
@@ -426,7 +469,7 @@ export default function Home() {
                   </div>
                   <p className="text-[15px] text-zinc-300 leading-relaxed">{ex.paragraph}</p>
                   {ex.logLines?.length > 0 && (
-                    <pre className="mt-3 whitespace-pre-wrap break-all rounded-lg bg-black/40 border border-white/10 p-3 text-xs leading-relaxed font-mono text-zinc-400">
+                    <pre className="mt-3 whitespace-pre-wrap break-all rounded-[2px] bg-black/40 border border-white/10 p-3 text-xs leading-relaxed font-mono text-zinc-400">
                       {ex.logLines.map((l, i) => (
                         <div key={i} className={l.danger ? "text-red-400 font-medium" : l.ok ? "text-emerald-400" : "text-zinc-400"}>{l.text}</div>
                       ))}
@@ -442,27 +485,27 @@ export default function Home() {
                 <p className="text-xs text-zinc-500 mb-4">Hidden on the free scan.</p>
                 <div className="space-y-2.5">
                   {result.locked.map((lk, i) => (
-                    <div key={`lk${i}`} className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                    <div key={`lk${i}`} className="rounded-[2px] border border-white/10 bg-white/[0.02] p-3">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${sevChip(lk.severity)}`}>{lk.severity}</span>
                         <span className="text-xs text-zinc-500">Finding {i + 2} of {result.totalFindings}</span>
                       </div>
                       <div className="space-y-1.5 blur-[3px] select-none pointer-events-none" aria-hidden>
-                        <div className="h-2 rounded bg-white/10 w-2/3" />
-                        <div className="h-2 rounded bg-white/10 w-full" />
+                        <div className="h-2 rounded-[2px] bg-white/10 w-2/3" />
+                        <div className="h-2 rounded-[2px] bg-white/10 w-full" />
                       </div>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => openConsult()} className="mt-5 w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>
+                <button onClick={() => openConsult()} className="mt-5 w-full rounded-[2px] py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>
                   Schedule a consultation to view {result.lockedCount} more →
                 </button>
               </div>
             ) : leaked ? (
-              <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "rgba(227,179,65,0.4)", background: "rgba(227,179,65,0.08)" }}>
+              <div className="rounded-[2px] border p-5 text-center" style={{ borderColor: "rgba(227,179,65,0.4)", background: "rgba(227,179,65,0.08)" }}>
                 <p className="font-semibold text-white">Get {result.host} fixed</p>
                 <p className="text-sm text-zinc-400 mt-1 mb-4">Book a free 15-minute consultation — we&apos;ll walk you through the finding, with the proof, and how to fix it.</p>
-                <button onClick={() => openConsult()} className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
+                <button onClick={() => openConsult()} className="w-full rounded-[2px] py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>Schedule my consultation →</button>
               </div>
             ) : null}
             </div>
@@ -537,13 +580,13 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="rounded-2xl border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
+              <div className="rounded-[2px] border p-5 text-sm text-zinc-300" style={{ borderColor: "rgba(227,179,65,0.25)", background: "rgba(227,179,65,0.06)" }}>
                 <b className="font-medium text-white">Don&apos;t take our word for it.</b>
                 <p className="mt-2 text-zinc-400">Open your site in Chrome → press <b className="text-zinc-200">F12</b> → <b className="text-zinc-200">Network</b> tab → <b className="text-zinc-200">Ctrl+F</b> → paste this:</p>
                 {result.verifySearch && (
                   <div className="mt-2 flex items-stretch gap-2">
                     <code className="flex-1 break-all rounded bg-black/40 border border-white/10 px-2.5 py-2 text-xs font-mono" style={{ color: gold }}>{result.verifySearch}</code>
-                    <button onClick={copyVerify} className="shrink-0 rounded bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied!" : "Copy"}</button>
+                    <button onClick={copyVerify} className="shrink-0 rounded-[2px] bg-white/10 hover:bg-white/20 px-3 text-xs font-medium text-white transition">{copied ? "Copied!" : "Copy"}</button>
                   </div>
                 )}
                 <p className="mt-2 text-xs text-zinc-500">That exact request fires <b className="text-zinc-400">before</b> your consent banner. Or check <span className="font-mono" style={{ color: gold }}>blacklight.themarkup.org</span>.</p>
@@ -558,7 +601,7 @@ export default function Home() {
       {showConsult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowConsult(false)}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#141210] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md rounded-[2px] border border-white/10 bg-[#141210] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setShowConsult(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white text-lg">✕</button>
             {consultSent ? (
               <div className="text-center py-4">
@@ -588,8 +631,8 @@ export default function Home() {
                 </p>
                 <form onSubmit={submitConsult} className="mt-4 space-y-2">
                   <input type="email" required value={consultEmail} onChange={(e) => setConsultEmail(e.target.value)} placeholder="you@company.com"
-                    className="w-full rounded-lg bg-white/[0.05] border border-white/15 px-4 py-2.5 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]" />
-                  <button className="w-full rounded-lg py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>{consultTier ? "Request a call" : "Request my consultation"}</button>
+                    className="w-full rounded-[2px] bg-white/[0.05] border border-white/15 px-4 py-2.5 text-white placeholder:text-zinc-500 outline-none focus:border-[#e3b341]" />
+                  <button className="w-full rounded-[2px] py-2.5 font-semibold text-[#0b0a08] hover:brightness-110" style={{ background: gold }}>{consultTier ? "Request a call" : "Request my consultation"}</button>
                 </form>
                 {CALENDLY_URL && <a href={CALENDLY_URL} target="_blank" rel="noreferrer" className="block text-center text-sm mt-3" style={{ color: gold }}>Or grab a time directly →</a>}
                 <p className="text-[11px] text-zinc-600 mt-3 text-center">No spam. We&apos;ll only use your email to schedule.</p>
@@ -602,41 +645,75 @@ export default function Home() {
       {!result && (
         <>
           {/* ---------- evidence pairing ---------- */}
-          <section className="mx-auto max-w-6xl px-6 py-20">
-            <div data-reveal className="text-center mb-10">
-              <p className={`${eyebrow} mb-3`} style={{ color: gold }}>What you get back</p>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>See the gap, then seal it.</h2>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] items-stretch">
-              <div data-reveal style={{ transitionDelay: "80ms" }} className={`${card} overflow-hidden`}>
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.08] font-mono text-[11px] text-zinc-500">
-                  <span className="h-2 w-2 rounded-full bg-red-500" />
-                  Network · fired before the consent banner
-                  <span className="ml-auto rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] tracking-wide text-zinc-500">EXAMPLE</span>
-                </div>
-                <pre className="whitespace-pre-wrap break-all p-4 font-mono text-[12px] leading-[2] text-zinc-500">
-                  <div><span className="text-red-400 font-medium">GET</span>  snap.licdn.com/li.lms-analytics/insight.min.js</div>
-                  <div><span className="text-red-400 font-medium">GET</span>  www.google-analytics.com/g/collect?v=2&amp;tid=G-XXXX</div>
-                  <div><span className="text-red-400 font-medium">POST</span> px.ads.linkedin.com/collect</div>
-                  <div className="text-zinc-600">— consent banner rendered at 7.21s —</div>
-                </pre>
-              </div>
-              <div data-reveal style={{ transitionDelay: "180ms" }} className={`${card} p-5 flex flex-col`}>
-                <p className="font-mono text-[11px] text-zinc-500 mb-4">VERDICT</p>
-                <p className="text-3xl font-bold leading-none" style={{ fontFamily: "var(--font-display)", color: gold }}>3 trackers</p>
-                <p className="text-sm text-zinc-500 mt-1.5 mb-5">fired before anyone consented</p>
-                <div className="space-y-2">
-                  {[["LinkedIn Insight Tag", "Sale/share", "text-red-300"], ["Google Analytics 4", "Gray area", "text-amber-300"]].map(([n, v, c]) => (
-                    <div key={n} className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px]">
-                      <span className="text-zinc-300">{n}</span><span className={c}>{v}</span>
+          <section className="mx-auto max-w-6xl px-6 pt-16 pb-24">
+            <SectionHead
+              n="00"
+              label="What you get back"
+              title="See the gap, then seal it."
+              note="Every finding is a request we actually caught leaving, with the clock reading at the moment it left. The gap between the first request and the question is the whole case."
+            />
+
+            <div className="mt-14 grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_17rem]">
+              {/* The exhibit. No window chrome, no dot, no rounded panel — this
+                  is a measurement, so it's drawn as one: a time axis with the
+                  requests hung off it, and the axis itself going red for the
+                  duration of the violation. The gap is a length of time, so it
+                  is shown as a length. */}
+              <figure data-reveal className="min-w-0" style={{ transitionDelay: "80ms" }}>
+                <figcaption className={`${eyebrow} flex items-baseline justify-between gap-4 text-zinc-600`}>
+                  <span>Exhibit A — a real visit</span>
+                  <span className="text-zinc-700">Example</span>
+                </figcaption>
+
+                <ol className={`${rule} mt-4 font-mono text-[12.5px]`}>
+                  {EXHIBIT.map((row) => (
+                    <li key={row.u} className="grid grid-cols-[3.75rem_1fr] gap-x-4">
+                      <span className="tnum py-2.5 text-right text-zinc-600">{row.t}</span>
+                      <span className="min-w-0 break-all border-l-2 border-white/10 py-2.5 pl-4 text-zinc-400">
+                        <span className="mr-2 font-medium text-red-400">{row.m}</span>
+                        {row.u}
+                      </span>
+                    </li>
+                  ))}
+
+                  <li className="grid grid-cols-[3.75rem_1fr] gap-x-4">
+                    <span aria-hidden />
+                    <span className="border-l-2 border-dashed border-red-500/45 py-6 pl-4 text-[12px] leading-relaxed text-red-300/85">
+                      6.90s of tracking with no way to say no
+                    </span>
+                  </li>
+
+                  <li className="grid grid-cols-[3.75rem_1fr] gap-x-4">
+                    <span className="tnum py-2.5 text-right text-zinc-500">7.21s</span>
+                    <span className="border-l-2 border-white/10 py-2.5 pl-4 text-zinc-500">
+                      <span style={{ color: gold }}>consent banner rendered</span> — the question is finally asked
+                    </span>
+                  </li>
+                </ol>
+                <div className={rule} />
+              </figure>
+
+              {/* Verdict as a figure, not a card. One number big enough to be
+                  read from across a room, then the detail in a plain list. */}
+              <aside data-reveal style={{ transitionDelay: "180ms" }} className="lg:border-l lg:border-white/[0.09] lg:pl-8">
+                <p className={`${eyebrow} text-zinc-600`}>Verdict</p>
+                <p className="display tnum mt-5 text-[4rem] font-bold" style={{ color: gold }}>3</p>
+                <p className="mt-1 text-[15px] leading-snug text-zinc-500">trackers fired before anyone consented</p>
+
+                <dl className={`${rule} mt-7`}>
+                  {[
+                    ["LinkedIn Insight Tag", "Sale/share", "text-red-300"],
+                    ["Google Analytics 4", "Gray area", "text-amber-300"],
+                    ["1 more finding", "Locked", "text-zinc-600"],
+                  ].map(([n, v, c]) => (
+                    <div key={n} className="flex items-baseline justify-between gap-3 border-b border-white/[0.06] py-2.5 text-[13px]">
+                      <dt className={n === "1 more finding" ? "text-zinc-600" : "text-zinc-300"}>{n}</dt>
+                      <dd className={`font-mono text-[11px] uppercase tracking-[0.12em] ${c}`}>{v}</dd>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.01] px-3 py-2 text-[13px] text-zinc-600">
-                    <span>1 more finding</span><span>Locked</span>
-                  </div>
-                </div>
-                <p className="mt-auto pt-5 text-xs text-zinc-600">Your scan shows your own site&apos;s real captured requests.</p>
-              </div>
+                </dl>
+                <p className="mt-5 text-xs leading-relaxed text-zinc-600">Your scan shows your own site&apos;s real captured requests.</p>
+              </aside>
             </div>
           </section>
         </>
@@ -646,17 +723,17 @@ export default function Home() {
       <>
           {/* ---------- bento ---------- */}
           <section id="how" className="scroll-mt-24">
-            <div className="mx-auto max-w-6xl px-6 py-20">
-              <div data-reveal className="text-center mb-10">
-                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>How it works</p>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Four layers of cover.</h2>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div className="mx-auto max-w-6xl px-6 py-24">
+              <SectionHead n="01" label="How it works" title="Four layers of cover." />
+              <div className="mt-14 grid gap-x-14 sm:grid-cols-2">
                 {BENTO.map((b, i) => (
-                  <div key={b.n} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`${card} p-6 hover:border-white/[0.16]`}>
-                    <p className="font-mono text-[11px] tracking-[0.15em] text-zinc-600">{b.n} · <span style={{ color: gold }}>{b.k.toUpperCase()}</span></p>
-                    <h3 className="mt-3 text-lg font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>{b.h}</h3>
-                    <p className="mt-2 text-[15px] leading-relaxed text-zinc-400">{b.p}</p>
+                  <div key={b.n} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`${rule} py-7`}>
+                    <p className={`${eyebrow} text-zinc-600`}>
+                      <span className="tnum" style={{ color: gold }}>{b.n}</span>
+                      <span className="ml-2.5">{b.k}</span>
+                    </p>
+                    <h3 className="display mt-4 text-[1.4rem] font-semibold text-white">{b.h}</h3>
+                    <p className="mt-2.5 text-[15px] leading-relaxed text-zinc-400">{b.p}</p>
                   </div>
                 ))}
               </div>
@@ -665,16 +742,13 @@ export default function Home() {
 
           {/* ---------- checks ---------- */}
           <section id="checks" className="scroll-mt-24">
-            <div className="mx-auto max-w-6xl px-6 py-20">
-              <div data-reveal className="text-center mb-10">
-                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Coverage</p>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>What we stand guard against</h2>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mx-auto max-w-6xl px-6 pb-24">
+              <SectionHead n="02" label="Coverage" title="What we stand guard against" />
+              <div className="mt-14 grid gap-x-12 sm:grid-cols-2 lg:grid-cols-3">
                 {CHECKS.map(([h, p], i) => (
-                  <div key={h} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={`${card} p-5 hover:border-white/[0.16]`}>
-                    <h3 className="font-medium text-zinc-100">{h}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-zinc-500">{p}</p>
+                  <div key={h} data-reveal style={{ transitionDelay: `${i * 70}ms` }} className={`${rule} py-6`}>
+                    <h3 className="text-[15px] font-medium text-zinc-100">{h}</h3>
+                    <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-500">{p}</p>
                   </div>
                 ))}
               </div>
@@ -683,46 +757,62 @@ export default function Home() {
 
           {/* ---------- pricing ---------- */}
           <section id="pricing" className="scroll-mt-24">
-            <div className="mx-auto max-w-6xl px-6 py-20">
-              <div data-reveal className="text-center mb-10">
-                <p className={`${eyebrow} mb-3`} style={{ color: gold }}>Pricing</p>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Simple pricing</h2>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+            <div className="mx-auto max-w-6xl px-6 pb-24">
+              <SectionHead n="03" label="Pricing" title="Simple pricing" />
+              {/* Columns in a price list, divided by rules — not three floating
+                  boxes. The chosen tier is marked by a gold rule across its top
+                  rather than a glow, which is a printer's emphasis, not a
+                  screen effect. */}
+              <div className="mt-14 grid sm:grid-cols-3">
                 {TIERS.map((t, i) => (
-                  <div key={t.name} data-reveal style={{ transitionDelay: `${i * 90}ms` }} className={`flex flex-col rounded-2xl border p-6 bg-white/[0.02] ${t.hot ? "border-[#e3b341]/40 ring-1 ring-[#e3b341]/20" : "border-white/[0.08]"}`}>
-                    <div className="flex items-baseline justify-between">
+                  <div
+                    key={t.name}
+                    data-reveal
+                    style={{ transitionDelay: `${i * 90}ms`, borderTopColor: t.hot ? gold : undefined }}
+                    className={`flex flex-col border-t-2 border-white/[0.13] py-8 ${i > 0 ? "sm:border-l sm:border-l-white/[0.07] sm:pl-8" : ""} ${i < TIERS.length - 1 ? "sm:pr-8" : ""}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
                       <h3 className="font-semibold text-white">{t.name}</h3>
-                      {t.hot && <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: gold }}>Most popular</span>}
+                      {t.hot && <span className={eyebrow} style={{ color: gold }}>Most popular</span>}
                     </div>
-                    <p className="mt-3 text-3xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t.price}<span className="text-base font-normal text-zinc-500">{t.per}</span></p>
-                    <p className="text-sm text-zinc-500">{t.tag}</p>
-                    <ul className="mt-5 space-y-2 text-sm text-zinc-300">
-                      {t.feats.map((f) => <li key={f} className="flex gap-2"><Check /><span>{f}</span></li>)}
+                    <p className="display tnum mt-4 text-[2.6rem] font-bold text-white">
+                      {t.price}<span className="text-base font-normal tracking-normal text-zinc-500">{t.per}</span>
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">{t.tag}</p>
+                    <ul className="mt-6 space-y-2.5 text-sm text-zinc-300">
+                      {t.feats.map((f) => <li key={f} className="flex gap-2.5"><Check /><span>{f}</span></li>)}
                     </ul>
-                    <button
-                      onClick={() => openConsult(t.name)}
-                      className={`mt-6 w-full rounded-lg py-2.5 text-sm font-semibold transition hover:brightness-110 ${t.hot ? "text-[#0b0a08]" : "border border-white/15 text-white hover:bg-white/[0.06]"}`}
-                      style={t.hot ? { background: gold } : undefined}
-                    >
-                      Get started
-                    </button>
+                    {/* mt-auto on the wrapper, so the three buttons share one
+                        baseline however many features a tier lists — buttons at
+                        three different heights is what makes a price list look
+                        unedited — while pt-7 keeps a floor under the gap. */}
+                    <div className="mt-auto pt-7">
+                      <button
+                        onClick={() => openConsult(t.name)}
+                        className={`w-full rounded-[2px] py-2.5 text-sm font-semibold transition hover:brightness-110 ${t.hot ? "text-[#0b0a08]" : "border border-white/15 text-white hover:bg-white/[0.06]"}`}
+                        style={t.hot ? { background: gold } : undefined}
+                      >
+                        Get started
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-              <p className="mt-6 text-center text-sm text-zinc-600">One-time done-with-you remediation audits also available. No access to your servers required.</p>
+              <p className="mt-8 text-sm text-zinc-600">One-time done-with-you remediation audits also available. No access to your servers required.</p>
             </div>
           </section>
 
           {/* ---------- CTA band ---------- */}
           <section>
-            <div className="mx-auto max-w-6xl px-6 py-20">
-              <div data-reveal className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-14 text-center">
-                <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-[300px] w-[600px] rounded-full" style={{ background: "radial-gradient(closest-side, rgba(227,179,65,0.12), transparent)" }} />
-                <div className="relative">
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>Armor your site.</h2>
-                  <p className="mt-2 text-zinc-400">Free scan. No account. Results in under a minute.</p>
-                  <a href="#scan" className="mt-7 inline-block rounded-lg px-7 py-3 font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>Scan my site →</a>
+            <div className="mx-auto max-w-6xl px-6 pb-28">
+              {/* No box, no glow — a rule, a big line of type, and the button.
+                  The closing statement of a document, not a promo banner. */}
+              <div data-reveal className={`${rule} grid gap-x-10 gap-y-7 pt-14 md:grid-cols-[10rem_1fr]`}>
+                <p className={`${eyebrow} text-zinc-600`}>Start</p>
+                <div>
+                  <h2 className="display max-w-2xl text-[clamp(2rem,5.5vw,3.5rem)] font-bold text-white">Armor your site.</h2>
+                  <p className="mt-4 text-[15px] text-zinc-400">Free scan. No account. Results in under a minute.</p>
+                  <a href="#scan" className="mt-8 inline-block rounded-[2px] px-8 py-3.5 font-semibold text-[#0b0a08] transition hover:brightness-110" style={{ background: gold }}>Scan my site →</a>
                 </div>
               </div>
             </div>

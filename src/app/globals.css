@@ -24,6 +24,46 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-body), Arial, Helvetica, sans-serif;
+  /* Real typographic defaults rather than the browser's: kerning on, and the
+     common ligature/contextual set enabled for the body face. */
+  font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Every figure in the interface is a measurement that gets compared to another
+   measurement — timestamps, counts, prices. Lining tabular figures keep the
+   columns true; proportional digits would make a ledger wobble. */
+.tnum,
+code,
+kbd,
+pre,
+.font-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1, "calt" 0;
+}
+
+/* Display type wants tighter tracking than body copy — the larger the size,
+   the more the default spacing reads as loose. Applied by class so the body
+   face keeps its own metrics. */
+.display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+
+/* Film grain. A single fixed layer over everything, so the near-black reads as
+   a material with tooth rather than a flat #0b0a08 fill. pointer-events stays
+   none, and it sits above the modal (z-50) deliberately — the grain is the
+   surface of the whole page, not of one layer. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 

@@ -13,7 +13,7 @@ export function DigestSelect({ recipientId, value }: { recipientId: string; valu
         name="digest"
         defaultValue={value}
         onChange={() => ref.current?.requestSubmit()}
-        className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs text-zinc-300 outline-none transition hover:border-white/20 focus:border-[#e3b341]/50"
+        className="rounded-[2px] border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs text-zinc-300 outline-none transition hover:border-white/20 focus:border-[#e3b341]/50"
         aria-label="Report frequency"
       >
         <option value="EVERY_SCAN">Every scan</option>

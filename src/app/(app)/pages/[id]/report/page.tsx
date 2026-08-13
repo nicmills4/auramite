@@ -75,7 +75,7 @@ export default async function PrintableReport({ params }: { params: Promise<{ id
         </header>
 
         {/* ---- verdict ---- */}
-        <section className="mt-6 rounded-lg border p-4" style={{ borderColor: standing.color }}>
+        <section className="mt-6 rounded-[2px] border p-4" style={{ borderColor: standing.color }}>
           <p className="text-lg font-bold" style={{ color: standing.color }}>{standing.word}</p>
           <p className="mt-1 text-sm text-zinc-600">
             {scan

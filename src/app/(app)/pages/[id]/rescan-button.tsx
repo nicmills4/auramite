@@ -12,7 +12,7 @@ export function RescanButton({ pageId }: { pageId: string }) {
       <button
         type="submit"
         disabled={pending || Boolean(state?.ok)}
-        className="rounded-lg border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.12] disabled:cursor-default disabled:opacity-50"
+        className="rounded-[2px] border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/[0.12] disabled:cursor-default disabled:opacity-50"
       >
         {pending ? "Starting…" : state?.ok ? "Scan running" : "Rescan now"}
       </button>

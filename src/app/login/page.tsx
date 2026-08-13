@@ -21,7 +21,7 @@ export default async function LoginPage() {
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: gold }} />
         </Link>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
+        <div className="rounded-[2px] border border-white/[0.08] bg-white/[0.02] p-6">
           <h1 className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Sign in</h1>
           <AuthForm
             action={loginAction}

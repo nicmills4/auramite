@@ -7,7 +7,7 @@ import { CreateCustomerForm, TestScanButton, AddPageForm, DeleteOrgForm } from "
 export const dynamic = "force-dynamic";
 
 const gold = "#e3b341";
-const card = "rounded-2xl border border-white/[0.08] bg-white/[0.02]";
+const card = "rounded-[2px] border border-white/[0.08] bg-white/[0.02]";
 const eyebrow = "font-mono text-[11px] uppercase tracking-[0.2em]";
 
 const STATUSES = ["ACTIVE", "TRIALING", "PAST_DUE", "CANCELED", "INCOMPLETE"] as const;
@@ -59,7 +59,7 @@ export default async function AdminPage() {
       </div>
 
       {!testInbox && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-4 text-sm text-amber-200">
+        <div className="rounded-[2px] border border-amber-500/30 bg-amber-500/[0.07] p-4 text-sm text-amber-200">
           Neither <span className="font-mono">ADMIN_TEST_EMAIL</span> nor <span className="font-mono">LEAD_NOTIFY_EMAIL</span> is set,
           so test scans have nowhere safe to deliver. Set one before running a scan.
         </div>
@@ -119,14 +119,14 @@ export default async function AdminPage() {
                     <form action={setSubscription} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="orgId" value={org.id} />
                       <select name="plan" defaultValue={sub?.plan ?? "GROWTH"}
-                        className="rounded-lg border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-[#e3b341]">
+                        className="rounded-[2px] border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-[#e3b341]">
                         {PLANS.map((p) => <option key={p.plan} value={p.plan}>{p.name}</option>)}
                       </select>
                       <select name="status" defaultValue={sub?.status ?? "ACTIVE"}
-                        className="rounded-lg border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-[#e3b341]">
+                        className="rounded-[2px] border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-[#e3b341]">
                         {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button type="submit" className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white transition hover:bg-white/[0.06]">
+                      <button type="submit" className="rounded-[2px] border border-white/15 px-3 py-2 text-xs text-white transition hover:bg-white/[0.06]">
                         Apply
                       </button>
                     </form>

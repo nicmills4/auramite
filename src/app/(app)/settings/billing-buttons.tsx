@@ -34,7 +34,7 @@ export function CheckoutButton({ plan, hot }: { plan: string; hot: boolean }) {
       <button
         onClick={start}
         disabled={busy}
-        className={`mt-6 w-full rounded-lg py-2.5 text-sm font-semibold transition hover:brightness-110 disabled:opacity-60 ${hot ? "text-[#0b0a08]" : "border border-white/15 text-white hover:bg-white/[0.06]"}`}
+        className={`mt-6 w-full rounded-[2px] py-2.5 text-sm font-semibold transition hover:brightness-110 disabled:opacity-60 ${hot ? "text-[#0b0a08]" : "border border-white/15 text-white hover:bg-white/[0.06]"}`}
         style={hot ? { background: gold } : undefined}
       >
         {busy ? "Opening checkout…" : `Choose ${plan}`}
@@ -63,7 +63,7 @@ export function PortalButton() {
       <button
         onClick={open}
         disabled={busy}
-        className="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.06] disabled:opacity-60"
+        className="rounded-[2px] border border-white/15 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.06] disabled:opacity-60"
       >
         {busy ? "Opening…" : "Manage billing"}
       </button>
